@@ -876,19 +876,48 @@
             font-size: 0.7rem;
         }
 
+        .review-filter-container {
+            padding: 15px 40px;
+            background: #0f0f1a;
+            border-bottom: 2px solid #ffaa0044;
+        }
+
+        .review-filter-input {
+            width: 100%;
+            background: #1a1a2e;
+            border: 2px solid #ffaa0044;
+            color: #ffaa00;
+            padding: 12px 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .review-filter-input:focus {
+            outline: none;
+            border-color: #ffaa00;
+            box-shadow: 0 0 10px rgba(255, 170, 0, 0.3);
+        }
+
+        .review-filter-input::placeholder {
+            color: #888;
+        }
+
         .review-actions {
             display: flex;
-            gap: 10px;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-top: 12px;
         }
 
         .review-btn-accept, .review-btn-reject {
-            flex: 1;
-            padding: 10px;
+            padding: 6px 16px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             font-family: 'Courier New', monospace;
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             font-weight: bold;
             transition: all 0.2s;
         }
@@ -1060,6 +1089,15 @@
                 <button class="close-btn" onclick="toggleReviewMode()">Cerrar</button>
             </div>
         </div>
+        <div class="review-filter-container">
+            <input
+                type="text"
+                id="reviewFilterInput"
+                class="review-filter-input"
+                placeholder="🔍 Filtrar por palabra clave..."
+                oninput="filterReviewNotes()"
+            >
+        </div>
         <div class="review-content" id="reviewContent">
             <div class="empty-state">No hay notas para revisar</div>
         </div>
@@ -1073,6 +1111,7 @@
         let collapsedAssignments = new Set(); // IDs de notas con asignaciones colapsadas
         let reviewMode = false;
         let reviewGroupByPerson = true; // true = por persona, false = por categoría/tags
+        let reviewFilterText = ''; // Texto del filtro de revisión
 
         // Lista de personas para asignar
         const people = ['VALEN', 'PABLO', 'MATI', 'LUKAKU', 'LUCASM', 'FEDEM', 'AGUS'];
@@ -1140,12 +1179,40 @@
             renderReviewMode();
         }
 
+        // Filtrar notas en review mode
+        function filterReviewNotes() {
+            const input = document.getElementById('reviewFilterInput');
+            reviewFilterText = input.value.toLowerCase().trim();
+            renderReviewMode();
+        }
+
         // Renderizar modo revisión
         function renderReviewMode() {
             const container = document.getElementById('reviewContent');
 
             if (notes.length === 0) {
                 container.innerHTML = '<div class="empty-state">No hay notas para revisar</div>';
+                return;
+            }
+
+            // Filtrar notas si hay texto de búsqueda
+            let filteredNotes = notes;
+            if (reviewFilterText) {
+                filteredNotes = notes.filter(note => {
+                    // Buscar en el texto de la nota
+                    if (note.text.toLowerCase().includes(reviewFilterText)) return true;
+                    // Buscar en la categoría
+                    if (note.category && note.category.toLowerCase().includes(reviewFilterText)) return true;
+                    // Buscar en los tags
+                    if (note.tags && note.tags.some(tag => tag.toLowerCase().includes(reviewFilterText))) return true;
+                    // Buscar en las personas asignadas
+                    if (note.assignedTo && note.assignedTo.some(person => person.toLowerCase().includes(reviewFilterText))) return true;
+                    return false;
+                });
+            }
+
+            if (filteredNotes.length === 0) {
+                container.innerHTML = '<div class="empty-state">No se encontraron notas con ese filtro</div>';
                 return;
             }
 
@@ -1156,7 +1223,7 @@
                 const byPerson = {};
                 const unassigned = [];
 
-                notes.forEach(note => {
+                filteredNotes.forEach(note => {
                     if (note.assignedTo && note.assignedTo.length > 0) {
                         note.assignedTo.forEach(person => {
                             if (!byPerson[person]) byPerson[person] = [];
@@ -1196,7 +1263,7 @@
             } else {
                 // Agrupar por categoría y tags
                 const grouped = {};
-                notes.forEach(note => {
+                filteredNotes.forEach(note => {
                     const category = note.category || 'Other';
                     if (!grouped[category]) grouped[category] = {};
 
