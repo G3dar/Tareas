@@ -467,6 +467,52 @@
             transform: scale(1.05);
         }
 
+        .work-status-badge {
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .work-status-badge:hover {
+            transform: scale(1.1);
+        }
+
+        .work-status-selector {
+            position: absolute;
+            background: #1a1a2e;
+            border: 2px solid #00ff88;
+            border-radius: 4px;
+            padding: 8px;
+            display: none;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        .work-status-selector.active {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .work-status-option {
+            padding: 6px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: bold;
+            transition: all 0.2s;
+            border: none;
+            font-family: 'Courier New', monospace;
+            color: white;
+        }
+
+        .work-status-option:hover {
+            transform: scale(1.05);
+        }
+
         .delete-btn, .edit-btn {
             background: #e94560;
             color: white;
@@ -1037,6 +1083,23 @@
         // Opciones de prioridad
         const priorities = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
 
+        // Estados de trabajo
+        const workStatuses = ['not_started', 'wip', 'awaiting_review', 'accepted', 'rejected'];
+        const workStatusLabels = {
+            'not_started': '⭕ NO EMPEZADO',
+            'wip': '🔄 WIP',
+            'awaiting_review': '⏳ ESPERANDO REVISIÓN',
+            'accepted': '✅ ACEPTADO',
+            'rejected': '❌ RECHAZADO'
+        };
+        const workStatusColors = {
+            'not_started': '#666',
+            'wip': '#0088ff',
+            'awaiting_review': '#ffaa00',
+            'accepted': '#00ff88',
+            'rejected': '#e94560'
+        };
+
         // Tags conocidos del juego Eggscape
         const knownTags = [
             'PIECES', 'ENEMIGOS', 'FUNCTIONALITY', 'MODO EDIT', 'PAUSA', 'LAYERS', 'UI',
@@ -1192,7 +1255,7 @@
             html += `<div class="review-item-text">${escapeHtml(note.text)}</div>`;
 
             // Metadata
-            html += `<div class="review-item-meta">`;
+            html += `<div class="review-item-meta" style="position: relative;">`;
             if (note.category) html += `<span class="review-meta-badge">${getCategoryEmoji(note.category)} ${note.category}</span>`;
             if (note.tags && note.tags.length > 0) {
                 note.tags.forEach(tag => {
@@ -1210,7 +1273,17 @@
             if (note.priority) {
                 html += `<span class="review-meta-badge" style="background: ${getPriorityColor(note.priority)};">⚡ ${note.priority.toUpperCase()}</span>`;
             }
+            html += `<span class="work-status-badge" onclick="toggleWorkStatusSelector(${note.id}, event)" style="background: ${workStatusColors[note.workStatus || 'not_started']};">${workStatusLabels[note.workStatus || 'not_started']}</span>`;
             html += `</div>`;
+
+            // Work status selector
+            html += `<div class="work-status-selector" id="work-status-selector-${note.id}" style="position: absolute; top: auto; left: auto;">
+                <button class="work-status-option" style="background: ${workStatusColors.not_started};" onclick="setWorkStatus(${note.id}, 'not_started', event)">⭕ NO EMPEZADO</button>
+                <button class="work-status-option" style="background: ${workStatusColors.wip};" onclick="setWorkStatus(${note.id}, 'wip', event)">🔄 WIP</button>
+                <button class="work-status-option" style="background: ${workStatusColors.awaiting_review};" onclick="setWorkStatus(${note.id}, 'awaiting_review', event)">⏳ ESPERANDO REVISIÓN</button>
+                <button class="work-status-option" style="background: ${workStatusColors.accepted};" onclick="setWorkStatus(${note.id}, 'accepted', event)">✅ ACEPTADO</button>
+                <button class="work-status-option" style="background: ${workStatusColors.rejected};" onclick="setWorkStatus(${note.id}, 'rejected', event)">❌ RECHAZADO</button>
+            </div>`;
 
             // Comentario de rechazo si existe
             if (note.reviewStatus === 'rejected' && note.rejectionComment) {
@@ -1343,6 +1416,7 @@
                 assignedTo: [], // Sin asignaciones por defecto
                 reviewStatus: null, // 'accepted' | 'rejected' | null
                 rejectionComment: '', // Comentario si fue rechazado
+                workStatus: 'not_started', // Estado de trabajo
                 timestamp: new Date().toISOString(),
                 aiProcessed: false
             };
@@ -1633,10 +1707,45 @@
             }
         }
 
+        // Cambiar estado de trabajo
+        function toggleWorkStatusSelector(noteId, event) {
+            event.stopPropagation();
+
+            // Cerrar otros selectores
+            document.querySelectorAll('.work-status-selector').forEach(s => s.classList.remove('active'));
+
+            const selector = document.getElementById(`work-status-selector-${noteId}`);
+            if (selector) {
+                selector.classList.toggle('active');
+            }
+        }
+
+        function setWorkStatus(noteId, status, event) {
+            event.stopPropagation();
+
+            const noteIndex = notes.findIndex(n => n.id === noteId);
+            if (noteIndex !== -1) {
+                notes[noteIndex].workStatus = status;
+                saveToLocalStorage();
+                renderNotes();
+                renderReviewMode();
+                addToHistory('work-status', `Estado "${workStatusLabels[status]}" para "${notes[noteIndex].text}"`);
+            }
+
+            // Cerrar selector
+            const selector = document.getElementById(`work-status-selector-${noteId}`);
+            if (selector) {
+                selector.classList.remove('active');
+            }
+        }
+
         // Cerrar selectores al hacer click fuera
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.priority-badge') && !e.target.closest('.priority-selector')) {
                 document.querySelectorAll('.priority-selector').forEach(s => s.classList.remove('active'));
+            }
+            if (!e.target.closest('.work-status-badge') && !e.target.closest('.work-status-selector')) {
+                document.querySelectorAll('.work-status-selector').forEach(s => s.classList.remove('active'));
             }
         });
 
@@ -1918,6 +2027,11 @@
                                                 <div class="note-card-meta">
                                                     <span>${formatTime(note.timestamp)}</span>
                                                     <div style="display: flex; gap: 5px; align-items: center;">
+                                                        <span class="work-status-badge"
+                                                              onclick="toggleWorkStatusSelector(${note.id}, event)"
+                                                              style="background: ${workStatusColors[note.workStatus || 'not_started']};">
+                                                            ${workStatusLabels[note.workStatus || 'not_started']}
+                                                        </span>
                                                         <span class="priority-badge ${note.priority ? 'priority-' + note.priority : ''}"
                                                               onclick="togglePrioritySelector(${note.id}, event)"
                                                               style="${!note.priority ? 'background: #16213e; color: #888;' : ''}">
@@ -1926,6 +2040,13 @@
                                                         <button class="edit-btn" onclick="startEditNote(${note.id}, event)">✎</button>
                                                         <button class="delete-btn" onclick="deleteNote(${note.id}, event)">✕</button>
                                                     </div>
+                                                </div>
+                                                <div class="work-status-selector" id="work-status-selector-${note.id}">
+                                                    <button class="work-status-option" style="background: ${workStatusColors.not_started};" onclick="setWorkStatus(${note.id}, 'not_started', event)">⭕ NO EMPEZADO</button>
+                                                    <button class="work-status-option" style="background: ${workStatusColors.wip};" onclick="setWorkStatus(${note.id}, 'wip', event)">🔄 WIP</button>
+                                                    <button class="work-status-option" style="background: ${workStatusColors.awaiting_review};" onclick="setWorkStatus(${note.id}, 'awaiting_review', event)">⏳ ESPERANDO REVISIÓN</button>
+                                                    <button class="work-status-option" style="background: ${workStatusColors.accepted};" onclick="setWorkStatus(${note.id}, 'accepted', event)">✅ ACEPTADO</button>
+                                                    <button class="work-status-option" style="background: ${workStatusColors.rejected};" onclick="setWorkStatus(${note.id}, 'rejected', event)">❌ RECHAZADO</button>
                                                 </div>
                                                 <div class="priority-selector" id="priority-selector-${note.id}">
                                                     <button class="priority-option priority-critical" onclick="setPriority(${note.id}, 'critical', event)">🔴 CRÍTICA</button>
@@ -2183,6 +2304,7 @@
                         if (!note.priority) note.priority = null;
                         if (!note.reviewStatus) note.reviewStatus = null;
                         if (!note.rejectionComment) note.rejectionComment = '';
+                        if (!note.workStatus) note.workStatus = 'not_started';
 
                         notes.push(note);
                         addTerminalLine(note.text, note.id);
@@ -2268,6 +2390,11 @@
                 if (savedNotes) notes = JSON.parse(savedNotes);
                 if (savedHistory) history = JSON.parse(savedHistory);
             }
+
+            // Asegurar que todas las notas tengan workStatus (backward compatibility)
+            notes.forEach(note => {
+                if (!note.workStatus) note.workStatus = 'not_started';
+            });
 
             // Renderizar notas cargadas
             notes.forEach(note => {
