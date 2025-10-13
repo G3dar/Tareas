@@ -1,0 +1,1716 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eggscape Build Notes - 2025-10-13</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0f;
+            color: #eee;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: #1a1a2e;
+            padding: 15px 20px;
+            border-bottom: 2px solid #00ff88;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #00ff88;
+            font-size: 1.5rem;
+        }
+
+        .header .date {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .terminal-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #0f0f1a;
+            border-right: 2px solid #1a1a2e;
+        }
+
+        .terminal-output {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            font-size: 0.95rem;
+        }
+
+        .terminal-line {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #1a1a2e;
+            border-radius: 4px;
+            border-left: 3px solid #00ff88;
+            animation: fadeIn 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .terminal-line-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .terminal-line-text {
+            flex: 1;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .terminal-line .prompt {
+            color: #00ff88;
+            margin-right: 10px;
+        }
+
+        .terminal-line .text {
+            color: #eee;
+        }
+
+        .terminal-line .ai-processing {
+            color: #ffa500;
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+
+        .terminal-line .ai-result {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-end;
+            flex-shrink: 0;
+        }
+
+        .terminal-category-badge {
+            background: #16213e;
+            color: #00ff88;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .terminal-tag {
+            background: #0f3a2e;
+            color: #00ff88;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            border: 1px solid #00ff8844;
+        }
+
+        .assignment-mode-toggle {
+            background: #2e1a3a;
+            color: #ff88ff;
+            border: 2px solid #ff88ff44;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .assignment-mode-toggle.active {
+            background: #4a2a5a;
+            border-color: #ff88ff;
+        }
+
+        .assignment-mode-toggle:hover {
+            background: #3a2050;
+        }
+
+        .assignment-section {
+            margin-top: 8px;
+            padding: 8px;
+            background: #0f0f1a;
+            border-radius: 4px;
+            border: 1px solid #ff88ff44;
+        }
+
+        .assignment-people {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .person-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: #1a1a2e;
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+            border: 1px solid #ff88ff44;
+        }
+
+        .person-checkbox:hover {
+            background: #242444;
+        }
+
+        .person-checkbox input[type="checkbox"],
+        .person-checkbox input[type="radio"] {
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .person-checkbox.selected {
+            background: #2e1a3a;
+            border-color: #ff88ff;
+        }
+
+        .assigned-person {
+            background: #2e1a3a;
+            color: #ff88ff;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            border: 1px solid #ff88ff88;
+            white-space: nowrap;
+        }
+
+        .assigned-people-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 4px;
+        }
+
+        .terminal-input-container {
+            background: #1a1a2e;
+            padding: 20px;
+            border-top: 2px solid #00ff88;
+        }
+
+        .terminal-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .terminal-input-wrapper .prompt {
+            color: #00ff88;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        #terminalInput {
+            flex: 1;
+            background: #0f0f1a;
+            border: 2px solid #16213e;
+            color: #00ff88;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+            border-radius: 4px;
+        }
+
+        #terminalInput:focus {
+            outline: none;
+            border-color: #00ff88;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+        }
+
+        .notes-section {
+            width: 450px;
+            background: #0f0f1a;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .notes-header {
+            background: #1a1a2e;
+            padding: 15px 20px;
+            border-bottom: 2px solid #00ff88;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .notes-header h2 {
+            color: #00ff88;
+            font-size: 1.2rem;
+        }
+
+        .notes-count {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .notes-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .tag-group {
+            margin-bottom: 25px;
+        }
+
+        .tag-group-header {
+            color: #00ff88;
+            font-weight: bold;
+            font-size: 1rem;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #16213e;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .tag-badge {
+            background: #16213e;
+            color: #00ff88;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.8rem;
+        }
+
+        .note-card {
+            background: #1a1a2e;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            border-left: 3px solid #00ff88;
+            transition: all 0.2s;
+        }
+
+        .note-card:hover {
+            background: #242444;
+        }
+
+        .note-card.priority-critical {
+            border-left-color: #ff0040;
+            background: #2a1a20;
+        }
+
+        .note-card.priority-high {
+            border-left-color: #ff6600;
+            background: #2a2010;
+        }
+
+        .note-card.priority-medium {
+            border-left-color: #ffcc00;
+            background: #2a2610;
+        }
+
+        .note-card.priority-low {
+            border-left-color: #00aaff;
+            background: #1a2030;
+        }
+
+        .note-card-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 8px;
+        }
+
+        .note-card-text {
+            color: #eee;
+            font-size: 0.9rem;
+            word-break: break-word;
+            flex: 1;
+        }
+
+        .note-card-text:hover {
+            color: #00ff88;
+            text-shadow: 0 0 5px rgba(0, 255, 136, 0.3);
+        }
+
+        .note-card-badges {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            align-items: flex-end;
+            flex-shrink: 0;
+        }
+
+        .note-category-badge {
+            background: #16213e;
+            color: #00ff88;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .note-tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            justify-content: flex-end;
+            max-width: 200px;
+        }
+
+        .note-tag {
+            background: #0f3a2e;
+            color: #00ff88;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            border: 1px solid #00ff8844;
+            white-space: nowrap;
+        }
+
+        .note-card-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.75rem;
+            color: #888;
+            flex-wrap: wrap;
+        }
+
+        .priority-badge {
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .priority-badge:hover {
+            transform: scale(1.1);
+        }
+
+        .priority-critical {
+            background: #ff0040;
+            color: white;
+        }
+
+        .priority-high {
+            background: #ff6600;
+            color: white;
+        }
+
+        .priority-medium {
+            background: #ffcc00;
+            color: #1a1a2e;
+        }
+
+        .priority-low {
+            background: #00aaff;
+            color: white;
+        }
+
+        .priority-selector {
+            position: absolute;
+            background: #1a1a2e;
+            border: 2px solid #00ff88;
+            border-radius: 4px;
+            padding: 8px;
+            display: none;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        .priority-selector.active {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .priority-option {
+            padding: 6px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: bold;
+            transition: all 0.2s;
+            border: none;
+            font-family: 'Courier New', monospace;
+        }
+
+        .priority-option:hover {
+            transform: scale(1.05);
+        }
+
+        .delete-btn, .edit-btn {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .edit-btn {
+            background: #0088ff;
+        }
+
+        .delete-btn:hover {
+            background: #ff6680;
+        }
+
+        .edit-btn:hover {
+            background: #00aaff;
+        }
+
+        .note-edit-input {
+            width: 100%;
+            background: #0f0f1a;
+            border: 2px solid #00ff88;
+            color: #00ff88;
+            padding: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+
+        .note-edit-input:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+        }
+
+        .edit-actions {
+            display: flex;
+            gap: 5px;
+            justify-content: flex-end;
+        }
+
+        .save-btn, .cancel-btn {
+            padding: 4px 12px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-family: 'Courier New', monospace;
+            transition: all 0.2s;
+        }
+
+        .save-btn {
+            background: #00ff88;
+            color: #0a0a0f;
+            font-weight: bold;
+        }
+
+        .save-btn:hover {
+            background: #00ffaa;
+        }
+
+        .cancel-btn {
+            background: #666;
+            color: white;
+        }
+
+        .cancel-btn:hover {
+            background: #888;
+        }
+
+        .history-toggle {
+            background: #16213e;
+            color: #00ff88;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .history-toggle:hover {
+            background: #242444;
+        }
+
+        .history-panel {
+            position: fixed;
+            right: -400px;
+            top: 0;
+            width: 400px;
+            height: 100vh;
+            background: #1a1a2e;
+            border-left: 2px solid #00ff88;
+            transition: right 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .history-panel.active {
+            right: 0;
+        }
+
+        .history-panel-header {
+            padding: 15px 20px;
+            background: #0f0f1a;
+            border-bottom: 2px solid #00ff88;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-panel-header h3 {
+            color: #00ff88;
+        }
+
+        .close-btn {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+        }
+
+        .history-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .history-item {
+            background: #0f0f1a;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        .history-item .time {
+            color: #00ff88;
+            margin-right: 10px;
+        }
+
+        .history-item .action {
+            color: #888;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0a0a0f;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #00ff88;
+            border-radius: 4px;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #666;
+            padding: 40px 20px;
+            font-style: italic;
+        }
+
+        @media (max-width: 1024px) {
+            .notes-section {
+                width: 350px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+
+            .notes-section {
+                width: 100%;
+                height: 40%;
+                border-right: none;
+                border-top: 2px solid #1a1a2e;
+            }
+
+            .terminal-section {
+                border-right: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🥚 Eggscape Build Notes</h1>
+        <div style="display: flex; gap: 15px; align-items: center;">
+            <div class="date">2025-10-13</div>
+            <button class="assignment-mode-toggle" id="assignmentModeBtn" onclick="toggleAssignmentMode()">
+                👥 MODO ASIGNACIÓN
+            </button>
+            <button class="history-toggle" onclick="exportNotes()" style="padding: 6px 12px; font-size: 0.85rem;">📥 Exportar</button>
+            <button class="history-toggle" onclick="exportByPerson()" style="padding: 6px 12px; font-size: 0.85rem;">👥 Exportar por Persona</button>
+            <button class="history-toggle" onclick="document.getElementById('importFile').click()" style="padding: 6px 12px; font-size: 0.85rem;">📤 Importar</button>
+            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importNotes(event)">
+            <button class="history-toggle" onclick="toggleHistory()">📜 Historial</button>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="terminal-section">
+            <div class="terminal-output" id="terminalOutput">
+                <div style="color: #00ff88; margin-bottom: 20px; font-size: 1.1rem;">
+                    💬 Escribe tus notas y presiona Enter. La AI las organizará automáticamente.
+                </div>
+            </div>
+            <div class="terminal-input-container">
+                <div class="terminal-input-wrapper">
+                    <span class="prompt">></span>
+                    <input
+                        type="text"
+                        id="terminalInput"
+                        placeholder="Escribe aquí tu nota..."
+                        autofocus
+                    >
+                </div>
+            </div>
+        </div>
+
+        <div class="notes-section">
+            <div class="notes-header">
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                    <h2>📋 Notas Organizadas</h2>
+                    <span class="notes-count" id="notesCount">0 notas</span>
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button class="history-toggle" onclick="recategorizeAndGroup()" style="padding: 6px 12px; font-size: 0.8rem;">🔄 Recategorizar y Agrupar</button>
+                    <button class="delete-btn" onclick="clearAllNotes()" style="padding: 8px 16px;">🗑️ Borrar Todo</button>
+                </div>
+            </div>
+            <div class="notes-list" id="notesList">
+                <div class="empty-state">No hay notas aún.<br>Empieza a escribir!</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="history-panel" id="historyPanel">
+        <div class="history-panel-header">
+            <h3>📜 Historial Completo</h3>
+            <button class="close-btn" onclick="toggleHistory()">Cerrar</button>
+        </div>
+        <div class="history-content" id="historyContent">
+            <div class="empty-state">No hay historial aún</div>
+        </div>
+    </div>
+
+    <script>
+        // Estado de la aplicación
+        let notes = [];
+        let history = [];
+        let assignmentMode = false;
+        let collapsedAssignments = new Set(); // IDs de notas con asignaciones colapsadas
+
+        // Lista de personas para asignar
+        const people = ['VALEN', 'PABLO', 'MATI', 'LUKAKU', 'LUCASM', 'FEDEM', 'AGUS'];
+
+        // Opciones de dificultad
+        const difficulties = ['EASY', 'MEDIUM', 'HARD'];
+
+        // Opciones de prioridad
+        const priorities = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
+
+        // Tags conocidos del juego Eggscape
+        const knownTags = [
+            'PIECES', 'ENEMIGOS', 'FUNCTIONALITY', 'MODO EDIT', 'PAUSA', 'LAYERS', 'UI',
+            'PACKS', 'SHD', 'OTHER', 'COLLECTABLES', 'COLLIDER', 'POLLERA', 'LOOK',
+            'MENU WB', 'ROY', 'SOUND', 'HONOR', 'RANK', 'GREEDY PIGGY', 'LEVELS',
+            'GRID', 'BACKEND', 'PLAY', 'FRENZY', 'WEAPONS', 'MARKET', 'GRABBABLES',
+            'MATCHMAKING', 'VR MODE', 'SNAPPING', 'LOBBY', 'FRIENDING', 'AUTOSAVE',
+            'VEHICLES', 'TUTORIAL', 'COMBAT', 'VOICECHAT', 'PERFORMANCE', 'TOOLS',
+            'COSMETICS', 'BUILDER', 'POWERUPS', 'LOGS', 'CAMERA', 'RACE MODE'
+        ];
+
+        // Inicializar
+        function init() {
+            loadFromLocalStorage();
+            renderNotes();
+            renderHistory();
+
+            // Configurar Enter para agregar nota
+            const input = document.getElementById('terminalInput');
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    addNote(); // NO AWAIT - no bloquear
+                }
+            });
+
+            // Mantener focus en el input
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.note-card') && !e.target.closest('.history-panel') && !e.target.closest('.delete-btn')) {
+                    input.focus();
+                }
+            });
+        }
+
+        // Agregar nota - NO ASYNC
+        function addNote() {
+            const input = document.getElementById('terminalInput');
+            const text = input.value.trim();
+
+            if (!text) return;
+
+            // Crear nota inmediatamente
+            const note = {
+                id: Date.now(),
+                text: text,
+                category: 'Other', // Default inmediato
+                tags: [],
+                priority: null, // Sin prioridad por defecto
+                difficulty: null, // Sin dificultad por defecto
+                assignedTo: [], // Sin asignaciones por defecto
+                timestamp: new Date().toISOString(),
+                aiProcessed: false
+            };
+
+            notes.push(note);
+            addTerminalLine(text, note.id);
+
+            // Limpiar input INMEDIATAMENTE
+            input.value = '';
+            input.focus();
+
+            // Guardar y renderizar INMEDIATAMENTE
+            saveToLocalStorage();
+            renderNotes();
+
+            // Procesar con AI en background (no bloquea)
+            processWithAI(note); // Sin await - corre en background
+        }
+
+        // Agregar línea al terminal
+        function addTerminalLine(text, noteId) {
+            const output = document.getElementById('terminalOutput');
+            const line = document.createElement('div');
+            line.className = 'terminal-line';
+            line.id = `line-${noteId}`;
+            renderTerminalLine(line, noteId, text);
+            output.appendChild(line);
+            output.scrollTop = output.scrollHeight;
+        }
+
+        // Renderizar contenido de línea terminal
+        function renderTerminalLine(lineElement, noteId, text) {
+            const note = notes.find(n => n.id === noteId);
+            if (!note) return;
+
+            // Verificar si esta nota específica está colapsada (ya se le dio aceptar)
+            const isCollapsed = collapsedAssignments.has(noteId);
+            const showAssignmentUI = assignmentMode && !isCollapsed;
+
+            lineElement.innerHTML = `
+                <div class="terminal-line-main">
+                    <div class="terminal-line-text">
+                        <span class="prompt">></span>
+                        <span class="text">${escapeHtml(text)}</span>
+                    </div>
+                    <div class="ai-processing" id="status-${noteId}" style="color: #ffa500; font-size: 0.85rem;">🤖 AI procesando...</div>
+                </div>
+                ${showAssignmentUI ? `
+                    <div class="assignment-section" id="assignment-terminal-${noteId}" style="margin-top: 8px;">
+                        <div style="margin-bottom: 8px;">
+                            <div style="color: #888; font-size: 0.7rem; margin-bottom: 4px;">👥 ASIGNAR A:</div>
+                            <div class="assignment-people">
+                                ${people.map(person => `
+                                    <label class="person-checkbox ${note.assignedTo && note.assignedTo.includes(person) ? 'selected' : ''}" onclick="togglePerson(${noteId}, '${person}', event)">
+                                        <input type="checkbox" value="${person}" ${note.assignedTo && note.assignedTo.includes(person) ? 'checked' : ''}>
+                                        ${person}
+                                    </label>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                            <div style="color: #888; font-size: 0.7rem; margin-bottom: 4px;">📊 DIFICULTAD:</div>
+                            <div class="assignment-people">
+                                ${difficulties.map(diff => `
+                                    <label class="person-checkbox ${note.difficulty === diff.toLowerCase() ? 'selected' : ''}" onclick="selectDifficulty(${noteId}, '${diff.toLowerCase()}', event)">
+                                        <input type="radio" name="difficulty-${noteId}" value="${diff.toLowerCase()}" ${note.difficulty === diff.toLowerCase() ? 'checked' : ''}>
+                                        ${diff}
+                                    </label>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                            <div style="color: #888; font-size: 0.7rem; margin-bottom: 4px;">⚡ PRIORIDAD:</div>
+                            <div class="assignment-people">
+                                ${priorities.map(prio => `
+                                    <label class="person-checkbox ${note.priority === prio.toLowerCase() ? 'selected' : ''}" onclick="selectPriority(${noteId}, '${prio.toLowerCase()}', event)">
+                                        <input type="radio" name="priority-${noteId}" value="${prio.toLowerCase()}" ${note.priority === prio.toLowerCase() ? 'checked' : ''}>
+                                        ${prio}
+                                    </label>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <button class="save-btn" onclick="assignPeople(${noteId}, event)">✓ Aceptar</button>
+                    </div>
+                ` : (note.assignedTo && note.assignedTo.length > 0) || note.difficulty || note.priority ? `
+                    <div style="margin-top: 6px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                        ${note.assignedTo && note.assignedTo.length > 0 ? `
+                            ${note.assignedTo.map(person => `<span class="assigned-person">👤 ${person}</span>`).join('')}
+                        ` : ''}
+                        ${note.difficulty ? `<span class="assigned-person" style="background: #1a3a2e; border-color: #00ff8888;">📊 ${note.difficulty.toUpperCase()}</span>` : ''}
+                        ${note.priority ? `<span class="assigned-person" style="background: ${getPriorityColor(note.priority)}; border-color: ${getPriorityColor(note.priority)};">⚡ ${note.priority.toUpperCase()}</span>` : ''}
+                    </div>
+                ` : ''}
+            `;
+        }
+
+        // Actualizar estado en terminal
+        function updateTerminalLine(noteId, message, isError = false, category = null, tags = null) {
+            const status = document.getElementById(`status-${noteId}`);
+            if (status) {
+                if (category && tags) {
+                    // Mostrar con badges visuales
+                    const tagsHtml = tags.length > 0
+                        ? tags.map(tag => `<span class="terminal-tag">${tag}</span>`).join('')
+                        : '';
+                    status.innerHTML = `
+                        <div class="ai-result">
+                            <span style="color: #00ff88;">✓</span>
+                            <span class="terminal-category-badge">${getCategoryEmoji(category)} ${category}</span>
+                            ${tagsHtml}
+                        </div>
+                    `;
+                } else {
+                    // Mostrar mensaje simple
+                    status.textContent = message;
+                    status.style.color = isError ? '#e94560' : '#00ff88';
+                }
+            }
+        }
+
+        // Procesar con AI - async pero no bloquea
+        async function processWithAI(note) {
+            console.log('🤖 Procesando con AI:', note.text);
+
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+                const response = await fetch('/api/categorize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ text: note.text }),
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('❌ Error del servidor:', errorText);
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('📦 Respuesta API completa:', data);
+
+                const content = data.content[0].text.trim();
+                console.log('📝 Texto de respuesta:', content);
+
+                const jsonMatch = content.match(/\{[\s\S]*\}/);
+                console.log('🔍 JSON extraído:', jsonMatch ? jsonMatch[0] : 'NO MATCH');
+
+                const suggestion = JSON.parse(jsonMatch ? jsonMatch[0] : content);
+                console.log('✅ Objeto parseado:', suggestion);
+                console.log('  → Category:', suggestion.category);
+                console.log('  → Tags:', suggestion.tags);
+
+                // Actualizar nota
+                const noteIndex = notes.findIndex(n => n.id === note.id);
+                if (noteIndex !== -1) {
+                    notes[noteIndex].category = suggestion.category || 'Other';
+                    notes[noteIndex].tags = suggestion.tags || [];
+                    notes[noteIndex].aiProcessed = true;
+
+                    // Actualizar terminal con badges visuales
+                    updateTerminalLine(note.id, null, false, suggestion.category, suggestion.tags || []);
+
+                    const tagStr = suggestion.tags?.length > 0 ? ` [${suggestion.tags.join(', ')}]` : '';
+                    addToHistory('add', `"${note.text}" → ${suggestion.category}${tagStr}`);
+
+                    saveToLocalStorage();
+                    renderNotes();
+                }
+
+            } catch (error) {
+                console.error('❌ AI Error completo:', error);
+                console.error('❌ Error name:', error.name);
+                console.error('❌ Error message:', error.message);
+                console.error('❌ Error stack:', error.stack);
+
+                updateTerminalLine(note.id, `⚠️ Error: ${error.message}`, true);
+
+                // Ya está guardada como "Other", solo marcar como procesada
+                const noteIndex = notes.findIndex(n => n.id === note.id);
+                if (noteIndex !== -1) {
+                    notes[noteIndex].aiProcessed = true;
+                    saveToLocalStorage();
+                }
+            }
+        }
+
+        // Eliminar nota
+        function deleteNote(id, event) {
+            event.stopPropagation();
+            const note = notes.find(n => n.id === id);
+            if (note && confirm('¿Eliminar esta nota?')) {
+                addToHistory('delete', `Eliminada: "${note.text}"`);
+                notes = notes.filter(n => n.id !== id);
+
+                const line = document.getElementById(`line-${id}`);
+                if (line) line.remove();
+
+                saveToLocalStorage();
+                renderNotes();
+            }
+        }
+
+        // Editar nota
+        let editingNoteId = null;
+
+        function startEditNote(id, event) {
+            event.stopPropagation();
+            editingNoteId = id;
+            renderNotes();
+        }
+
+        function saveEditNote(id, event) {
+            event.stopPropagation();
+            const input = document.getElementById(`edit-input-${id}`);
+            const newText = input.value.trim();
+
+            if (!newText) {
+                alert('La nota no puede estar vacía');
+                return;
+            }
+
+            const noteIndex = notes.findIndex(n => n.id === id);
+            if (noteIndex !== -1) {
+                const oldText = notes[noteIndex].text;
+                notes[noteIndex].text = newText;
+                notes[noteIndex].aiProcessed = false;
+
+                addToHistory('edit', `Editada: "${oldText}" → "${newText}"`);
+
+                // Actualizar terminal
+                const line = document.getElementById(`line-${id}`);
+                if (line) {
+                    const textSpan = line.querySelector('.text');
+                    if (textSpan) textSpan.textContent = newText;
+                    updateTerminalLine(id, '🤖 AI procesando...', false);
+                }
+
+                saveToLocalStorage();
+                editingNoteId = null;
+                renderNotes();
+
+                // Re-procesar con AI
+                processWithAI(notes[noteIndex]);
+            }
+        }
+
+        function cancelEditNote(event) {
+            event.stopPropagation();
+            editingNoteId = null;
+            renderNotes();
+        }
+
+        // Cambiar prioridad
+        function togglePrioritySelector(noteId, event) {
+            event.stopPropagation();
+
+            // Cerrar otros selectores
+            document.querySelectorAll('.priority-selector').forEach(s => s.classList.remove('active'));
+
+            const selector = document.getElementById(`priority-selector-${noteId}`);
+            if (selector) {
+                selector.classList.toggle('active');
+            }
+        }
+
+        function setPriority(noteId, priority, event) {
+            event.stopPropagation();
+
+            const noteIndex = notes.findIndex(n => n.id === noteId);
+            if (noteIndex !== -1) {
+                notes[noteIndex].priority = priority;
+                saveToLocalStorage();
+                renderNotes();
+                addToHistory('priority', `Prioridad ${priority.toUpperCase()} para "${notes[noteIndex].text}"`);
+            }
+
+            // Cerrar selector
+            const selector = document.getElementById(`priority-selector-${noteId}`);
+            if (selector) {
+                selector.classList.remove('active');
+            }
+        }
+
+        // Cerrar selectores al hacer click fuera
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.priority-badge') && !e.target.closest('.priority-selector')) {
+                document.querySelectorAll('.priority-selector').forEach(s => s.classList.remove('active'));
+            }
+        });
+
+        // Recategorizar y agrupar todas las notas
+        async function recategorizeAndGroup() {
+            if (notes.length === 0) {
+                alert('No hay notas para recategorizar');
+                return;
+            }
+
+            if (!confirm(`¿Recategorizar y agrupar TODAS las ${notes.length} nota${notes.length !== 1 ? 's' : ''} con AI?\n\nEsto reorganizará todas las notas por categorías y agrupará items similares con tags comunes.`)) {
+                return;
+            }
+
+            console.log(`🔄 Recategorizando y agrupando ${notes.length} notas...`);
+            addToHistory('recategorize', `Recategorizando y agrupando ${notes.length} notas`);
+
+            // Procesar todas las notas
+            for (const note of notes) {
+                console.log(`🔄 Recategorizando: "${note.text}"`);
+                updateTerminalLine(note.id, '🔄 Recategorizando y agrupando...', false);
+
+                // Marcar como no procesada para que se re-procese
+                const noteIndex = notes.findIndex(n => n.id === note.id);
+                if (noteIndex !== -1) {
+                    notes[noteIndex].aiProcessed = false;
+                }
+
+                await processWithAI(note);
+
+                // Pequeña pausa para no saturar el API
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+
+            console.log('✅ Recategorización y agrupación completa');
+            addToHistory('recategorize', `Recategorización y agrupación completada - items similares ahora tienen tags comunes`);
+            alert('✅ Recategorización completa!\n\nLas notas han sido reorganizadas por categorías y las similares han sido agrupadas con tags comunes.');
+        }
+
+        // Borrar todas las notas
+        function clearAllNotes() {
+            if (notes.length === 0) {
+                alert('No hay notas para borrar');
+                return;
+            }
+
+            if (confirm(`¿Borrar TODAS las ${notes.length} notas?`)) {
+                addToHistory('clear', `Borradas ${notes.length} notas`);
+                notes = [];
+
+                const output = document.getElementById('terminalOutput');
+                output.innerHTML = `
+                    <div style="color: #00ff88; margin-bottom: 20px; font-size: 1.1rem;">
+                        💬 Escribe tus notas y presiona Enter. La AI las organizará automáticamente.
+                    </div>
+                `;
+
+                saveToLocalStorage();
+                renderNotes();
+                document.getElementById('terminalInput').focus();
+            }
+        }
+
+        // Toggle modo asignación
+        function toggleAssignmentMode() {
+            assignmentMode = !assignmentMode;
+            const btn = document.getElementById('assignmentModeBtn');
+            if (assignmentMode) {
+                btn.classList.add('active');
+                // Al entrar en modo asignación, limpiar las notas colapsadas
+                // para que todas muestren las opciones
+                collapsedAssignments.clear();
+            } else {
+                btn.classList.remove('active');
+                // Al salir del modo, limpiar también
+                collapsedAssignments.clear();
+            }
+
+            // Re-renderizar todas las líneas del terminal
+            notes.forEach(note => {
+                const lineElement = document.getElementById(`line-${note.id}`);
+                if (lineElement) {
+                    renderTerminalLine(lineElement, note.id, note.text);
+                    // Restaurar estado de AI si ya fue procesado
+                    if (note.aiProcessed) {
+                        updateTerminalLine(note.id, null, false, note.category, note.tags || []);
+                    }
+                }
+            });
+
+            renderNotes();
+        }
+
+        // Toggle selección de persona
+        function togglePerson(noteId, person, event) {
+            event.stopPropagation();
+            const checkbox = event.target.closest('.person-checkbox').querySelector('input[type="checkbox"]');
+            checkbox.checked = !checkbox.checked;
+
+            const label = event.target.closest('.person-checkbox');
+            if (checkbox.checked) {
+                label.classList.add('selected');
+            } else {
+                label.classList.remove('selected');
+            }
+        }
+
+        // Seleccionar dificultad
+        function selectDifficulty(noteId, difficulty, event) {
+            event.stopPropagation();
+
+            // Desmarcar todos los radio buttons de dificultad
+            const allRadios = document.querySelectorAll(`input[name="difficulty-${noteId}"]`);
+            allRadios.forEach(radio => {
+                radio.checked = false;
+                radio.closest('.person-checkbox').classList.remove('selected');
+            });
+
+            // Marcar el seleccionado
+            const radio = event.target.closest('.person-checkbox').querySelector('input[type="radio"]');
+            radio.checked = true;
+            event.target.closest('.person-checkbox').classList.add('selected');
+        }
+
+        // Seleccionar prioridad
+        function selectPriority(noteId, priority, event) {
+            event.stopPropagation();
+
+            // Desmarcar todos los radio buttons de prioridad
+            const allRadios = document.querySelectorAll(`input[name="priority-${noteId}"]`);
+            allRadios.forEach(radio => {
+                radio.checked = false;
+                radio.closest('.person-checkbox').classList.remove('selected');
+            });
+
+            // Marcar el seleccionado
+            const radio = event.target.closest('.person-checkbox').querySelector('input[type="radio"]');
+            radio.checked = true;
+            event.target.closest('.person-checkbox').classList.add('selected');
+        }
+
+        // Obtener color de prioridad
+        function getPriorityColor(priority) {
+            const colors = {
+                'low': '#00aaff',
+                'medium': '#ffcc00',
+                'high': '#ff6600',
+                'critical': '#ff0040'
+            };
+            return colors[priority] || '#2e1a3a';
+        }
+
+        // Asignar personas a nota
+        function assignPeople(noteId, event) {
+            event.stopPropagation();
+
+            // Obtener personas seleccionadas
+            const checkboxes = document.querySelectorAll(`#assignment-terminal-${noteId} input[type="checkbox"]:checked`);
+            const selectedPeople = Array.from(checkboxes).map(cb => cb.value);
+
+            // Obtener dificultad seleccionada
+            const difficultyRadio = document.querySelector(`input[name="difficulty-${noteId}"]:checked`);
+            const selectedDifficulty = difficultyRadio ? difficultyRadio.value : null;
+
+            // Obtener prioridad seleccionada
+            const priorityRadio = document.querySelector(`input[name="priority-${noteId}"]:checked`);
+            const selectedPriority = priorityRadio ? priorityRadio.value : null;
+
+            const noteIndex = notes.findIndex(n => n.id === noteId);
+            if (noteIndex !== -1) {
+                notes[noteIndex].assignedTo = selectedPeople;
+                notes[noteIndex].difficulty = selectedDifficulty;
+                notes[noteIndex].priority = selectedPriority;
+
+                saveToLocalStorage();
+
+                // Log en historial
+                const details = [];
+                if (selectedPeople.length > 0) details.push(`👥 ${selectedPeople.join(', ')}`);
+                if (selectedDifficulty) details.push(`📊 ${selectedDifficulty.toUpperCase()}`);
+                if (selectedPriority) details.push(`⚡ ${selectedPriority.toUpperCase()}`);
+
+                const detailsStr = details.length > 0 ? details.join(' | ') : 'sin asignaciones';
+                addToHistory('assign', `Asignada "${notes[noteIndex].text}" → ${detailsStr}`);
+
+                // Marcar esta nota como colapsada (cerrada) pero NO salir del modo de asignación
+                collapsedAssignments.add(noteId);
+
+                // Re-renderizar SOLO esta línea del terminal
+                const lineElement = document.getElementById(`line-${noteId}`);
+                if (lineElement) {
+                    renderTerminalLine(lineElement, noteId, notes[noteIndex].text);
+                    // Restaurar estado de AI si ya fue procesado
+                    if (notes[noteIndex].aiProcessed) {
+                        updateTerminalLine(noteId, null, false, notes[noteIndex].category, notes[noteIndex].tags || []);
+                    }
+                }
+
+                renderNotes();
+            }
+        }
+
+        // Renderizar notas organizadas
+        function renderNotes() {
+            const container = document.getElementById('notesList');
+            const countEl = document.getElementById('notesCount');
+
+            if (notes.length === 0) {
+                container.innerHTML = '<div class="empty-state">No hay notas aún.<br>Empieza a escribir!</div>';
+                countEl.textContent = '0 notas';
+                return;
+            }
+
+            countEl.textContent = `${notes.length} nota${notes.length !== 1 ? 's' : ''}`;
+
+            // Agrupar por categoría y tags
+            const grouped = {};
+            notes.forEach(note => {
+                const category = note.category || 'Other';
+                if (!grouped[category]) grouped[category] = {};
+
+                if (note.tags && note.tags.length > 0) {
+                    note.tags.forEach(tag => {
+                        if (!grouped[category][tag]) grouped[category][tag] = [];
+                        grouped[category][tag].push(note);
+                    });
+                } else {
+                    if (!grouped[category]['General']) grouped[category]['General'] = [];
+                    grouped[category]['General'].push(note);
+                }
+            });
+
+            // Renderizar
+            container.innerHTML = Object.entries(grouped)
+                .map(([category, tagGroups]) => {
+                    const totalInCategory = Object.values(tagGroups).flat().length;
+                    return `
+                        <div style="margin-bottom: 30px;">
+                            <div style="color: #00ff88; font-weight: bold; font-size: 1.1rem; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #16213e;">
+                                ${getCategoryEmoji(category)} ${category}
+                                <span style="color: #888; font-size: 0.85rem; margin-left: 10px;">(${totalInCategory})</span>
+                            </div>
+                            ${Object.entries(tagGroups).map(([tag, tagNotes]) => `
+                                <div class="tag-group">
+                                    <div class="tag-group-header">
+                                        <span>${tag}</span>
+                                        <span class="tag-badge">${tagNotes.length}</span>
+                                    </div>
+                                    ${tagNotes.map(note => `
+                                        <div class="note-card ${note.priority ? 'priority-' + note.priority : ''}" style="position: relative;">
+                                            ${editingNoteId === note.id ? `
+                                                <input type="text"
+                                                       class="note-edit-input"
+                                                       id="edit-input-${note.id}"
+                                                       value="${escapeHtml(note.text)}"
+                                                       onkeypress="if(event.key==='Enter') saveEditNote(${note.id}, event); else if(event.key==='Escape') cancelEditNote(event);"
+                                                       autofocus>
+                                                <div class="edit-actions">
+                                                    <button class="save-btn" onclick="saveEditNote(${note.id}, event)">✓ Guardar</button>
+                                                    <button class="cancel-btn" onclick="cancelEditNote(event)">✕ Cancelar</button>
+                                                </div>
+                                            ` : `
+                                                <div class="note-card-content">
+                                                    <div class="note-card-text" onclick="startEditNote(${note.id}, event)" style="cursor: pointer;">${escapeHtml(note.text)}</div>
+                                                    <div class="note-card-badges">
+                                                        <span class="note-category-badge">${getCategoryEmoji(note.category)} ${note.category}</span>
+                                                        ${note.tags && note.tags.length > 0 ? `
+                                                            <div class="note-tags-container">
+                                                                ${note.tags.map(tag => `<span class="note-tag">${tag}</span>`).join('')}
+                                                            </div>
+                                                        ` : ''}
+                                                    </div>
+                                                </div>
+                                                ${note.assignedTo && note.assignedTo.length > 0 ? `
+                                                    <div class="assigned-people-container">
+                                                        ${note.assignedTo.map(person => `<span class="assigned-person">👤 ${person}</span>`).join('')}
+                                                    </div>
+                                                ` : ''}
+                                                <div class="note-card-meta">
+                                                    <span>${formatTime(note.timestamp)}</span>
+                                                    <div style="display: flex; gap: 5px; align-items: center;">
+                                                        <span class="priority-badge ${note.priority ? 'priority-' + note.priority : ''}"
+                                                              onclick="togglePrioritySelector(${note.id}, event)"
+                                                              style="${!note.priority ? 'background: #16213e; color: #888;' : ''}">
+                                                            ${note.priority ? note.priority.toUpperCase() : '⚡ Prioridad'}
+                                                        </span>
+                                                        <button class="edit-btn" onclick="startEditNote(${note.id}, event)">✎</button>
+                                                        <button class="delete-btn" onclick="deleteNote(${note.id}, event)">✕</button>
+                                                    </div>
+                                                </div>
+                                                <div class="priority-selector" id="priority-selector-${note.id}">
+                                                    <button class="priority-option priority-critical" onclick="setPriority(${note.id}, 'critical', event)">🔴 CRÍTICA</button>
+                                                    <button class="priority-option priority-high" onclick="setPriority(${note.id}, 'high', event)">🟠 ALTA</button>
+                                                    <button class="priority-option priority-medium" onclick="setPriority(${note.id}, 'medium', event)">🟡 MEDIA</button>
+                                                    <button class="priority-option priority-low" onclick="setPriority(${note.id}, 'low', event)">🔵 BAJA</button>
+                                                </div>
+                                            `}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                })
+                .join('');
+        }
+
+        // Agregar al historial
+        function addToHistory(action, description) {
+            history.unshift({
+                timestamp: new Date().toISOString(),
+                action: action,
+                description: description
+            });
+
+            if (history.length > 100) {
+                history = history.slice(0, 100);
+            }
+
+            saveToLocalStorage();
+            renderHistory();
+        }
+
+        // Renderizar historial
+        function renderHistory() {
+            const container = document.getElementById('historyContent');
+
+            if (history.length === 0) {
+                container.innerHTML = '<div class="empty-state">No hay historial aún</div>';
+                return;
+            }
+
+            container.innerHTML = history.map(item => `
+                <div class="history-item">
+                    <span class="time">${formatTime(item.timestamp)}</span>
+                    <span class="action">${escapeHtml(item.description)}</span>
+                </div>
+            `).join('');
+        }
+
+        // Toggle historial
+        function toggleHistory() {
+            document.getElementById('historyPanel').classList.toggle('active');
+        }
+
+        // Exportar notas
+        function exportNotes() {
+            if (notes.length === 0) {
+                alert('No hay notas para exportar');
+                return;
+            }
+
+            const data = {
+                version: '1.0',
+                exportDate: new Date().toISOString(),
+                notes: notes,
+                history: history
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const date = new Date().toISOString().split('T')[0];
+            a.href = url;
+            a.download = `eggscape-notes-${date}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            addToHistory('export', `Exportadas ${notes.length} notas`);
+            console.log('✅ Notas exportadas');
+        }
+
+        // Exportar notas por persona
+        function exportByPerson() {
+            if (notes.length === 0) {
+                alert('No hay notas para exportar');
+                return;
+            }
+
+            // Agrupar notas por persona
+            const tasksByPerson = {};
+            const unassignedTasks = [];
+
+            notes.forEach(note => {
+                if (note.assignedTo && note.assignedTo.length > 0) {
+                    note.assignedTo.forEach(person => {
+                        if (!tasksByPerson[person]) {
+                            tasksByPerson[person] = [];
+                        }
+                        tasksByPerson[person].push(note);
+                    });
+                } else {
+                    unassignedTasks.push(note);
+                }
+            });
+
+            // Generar reporte en texto
+            const date = new Date().toLocaleDateString('es-AR', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            let report = `╔════════════════════════════════════════════════════════════════╗\n`;
+            report += `║     EGGSCAPE - TAREAS POR PERSONA - ${date}     ║\n`;
+            report += `╚════════════════════════════════════════════════════════════════╝\n\n`;
+
+            // Ordenar personas alfabéticamente
+            const sortedPeople = Object.keys(tasksByPerson).sort();
+
+            sortedPeople.forEach(person => {
+                const tasks = tasksByPerson[person];
+                report += `\n${'═'.repeat(70)}\n`;
+                report += `👤 ${person} - ${tasks.length} tarea${tasks.length !== 1 ? 's' : ''}\n`;
+                report += `${'═'.repeat(70)}\n\n`;
+
+                // Agrupar por prioridad
+                const byPriority = {
+                    'critical': [],
+                    'high': [],
+                    'medium': [],
+                    'low': [],
+                    'none': []
+                };
+
+                tasks.forEach(task => {
+                    const priority = task.priority || 'none';
+                    byPriority[priority].push(task);
+                });
+
+                // Mostrar por prioridad
+                const priorityOrder = ['critical', 'high', 'medium', 'low', 'none'];
+                const priorityLabels = {
+                    'critical': '🔴 CRÍTICA',
+                    'high': '🟠 ALTA',
+                    'medium': '🟡 MEDIA',
+                    'low': '🔵 BAJA',
+                    'none': '⚪ SIN PRIORIDAD'
+                };
+
+                priorityOrder.forEach(priority => {
+                    const priorityTasks = byPriority[priority];
+                    if (priorityTasks.length > 0) {
+                        report += `  ${priorityLabels[priority]}:\n`;
+                        report += `  ${'-'.repeat(65)}\n`;
+
+                        priorityTasks.forEach((task, index) => {
+                            report += `  ${index + 1}. ${task.text}\n`;
+
+                            // Información adicional
+                            const details = [];
+                            if (task.category) details.push(`Categoría: ${task.category}`);
+                            if (task.difficulty) details.push(`Dificultad: ${task.difficulty.toUpperCase()}`);
+                            if (task.tags && task.tags.length > 0) details.push(`Tags: ${task.tags.join(', ')}`);
+
+                            if (details.length > 0) {
+                                report += `     ${details.join(' | ')}\n`;
+                            }
+                            report += `\n`;
+                        });
+                    }
+                });
+            });
+
+            // Tareas sin asignar
+            if (unassignedTasks.length > 0) {
+                report += `\n${'═'.repeat(70)}\n`;
+                report += `📋 TAREAS SIN ASIGNAR - ${unassignedTasks.length} tarea${unassignedTasks.length !== 1 ? 's' : ''}\n`;
+                report += `${'═'.repeat(70)}\n\n`;
+
+                unassignedTasks.forEach((task, index) => {
+                    report += `${index + 1}. ${task.text}\n`;
+
+                    const details = [];
+                    if (task.category) details.push(`Categoría: ${task.category}`);
+                    if (task.difficulty) details.push(`Dificultad: ${task.difficulty.toUpperCase()}`);
+                    if (task.priority) details.push(`Prioridad: ${task.priority.toUpperCase()}`);
+                    if (task.tags && task.tags.length > 0) details.push(`Tags: ${task.tags.join(', ')}`);
+
+                    if (details.length > 0) {
+                        report += `   ${details.join(' | ')}\n`;
+                    }
+                    report += `\n`;
+                });
+            }
+
+            // Resumen
+            report += `\n${'═'.repeat(70)}\n`;
+            report += `📊 RESUMEN\n`;
+            report += `${'═'.repeat(70)}\n`;
+            report += `Total de tareas: ${notes.length}\n`;
+            report += `Tareas asignadas: ${notes.filter(n => n.assignedTo && n.assignedTo.length > 0).length}\n`;
+            report += `Tareas sin asignar: ${unassignedTasks.length}\n`;
+            report += `Personas con tareas: ${sortedPeople.length}\n`;
+
+            // Descargar archivo
+            const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const dateStr = new Date().toISOString().split('T')[0];
+            a.href = url;
+            a.download = `eggscape-tareas-por-persona-${dateStr}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            addToHistory('export', `Exportadas tareas por persona (${sortedPeople.length} personas)`);
+            console.log('✅ Tareas por persona exportadas');
+        }
+
+        // Importar notas
+        function importNotes(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+
+                    // Validar estructura
+                    if (!data.notes || !Array.isArray(data.notes)) {
+                        throw new Error('Formato de archivo inválido');
+                    }
+
+                    const importCount = data.notes.length;
+
+                    if (!confirm(`¿Importar ${importCount} nota${importCount !== 1 ? 's' : ''}?\n\nEsto se agregará a tus notas existentes.`)) {
+                        event.target.value = '';
+                        return;
+                    }
+
+                    // Agregar notas importadas
+                    data.notes.forEach(note => {
+                        // Asignar nuevo ID para evitar conflictos
+                        note.id = Date.now() + Math.random();
+
+                        // Asegurar que tenga todos los campos necesarios
+                        if (!note.assignedTo) note.assignedTo = [];
+                        if (!note.difficulty) note.difficulty = null;
+                        if (!note.priority) note.priority = null;
+
+                        notes.push(note);
+                        addTerminalLine(note.text, note.id);
+                        if (note.aiProcessed) {
+                            updateTerminalLine(note.id, null, false, note.category, note.tags || []);
+                        }
+                    });
+
+                    // Importar historial si existe
+                    if (data.history && Array.isArray(data.history)) {
+                        data.history.forEach(item => history.push(item));
+                    }
+
+                    saveToLocalStorage();
+                    renderNotes();
+                    renderHistory();
+
+                    addToHistory('import', `Importadas ${importCount} notas`);
+                    alert(`✅ Importadas ${importCount} notas correctamente!`);
+                    console.log('✅ Notas importadas');
+
+                } catch (error) {
+                    console.error('❌ Error importando:', error);
+                    alert('❌ Error al importar el archivo.\n\nAsegúrate de que sea un archivo válido exportado desde esta aplicación.');
+                }
+
+                // Limpiar input
+                event.target.value = '';
+            };
+
+            reader.readAsText(file);
+        }
+
+        // Guardar/Cargar localStorage
+        function saveToLocalStorage() {
+            localStorage.setItem('eggscape_notes', JSON.stringify(notes));
+            localStorage.setItem('eggscape_history', JSON.stringify(history));
+        }
+
+        function loadFromLocalStorage() {
+            const savedNotes = localStorage.getItem('eggscape_notes');
+            const savedHistory = localStorage.getItem('eggscape_history');
+
+            if (savedNotes) {
+                notes = JSON.parse(savedNotes);
+                notes.forEach(note => {
+                    addTerminalLine(note.text, note.id);
+                    if (note.aiProcessed) {
+                        // Usar badges visuales si tiene categoría
+                        updateTerminalLine(note.id, null, false, note.category, note.tags || []);
+                    }
+                });
+            }
+            if (savedHistory) history = JSON.parse(savedHistory);
+        }
+
+        // Utilidades
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function getCategoryEmoji(category) {
+            const emojis = {
+                'Bug': '🐛', 'Feature': '✨', 'Performance': '⚡', 'UI': '🎨',
+                'Sound': '🔊', 'Gameplay': '🎮', 'Level Design': '🗺️',
+                'Backend': '⚙️', 'Tools': '🔧', 'Other': '📝'
+            };
+            return emojis[category] || '📝';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Inicializar
+        init();
+    </script>
+</body>
+</html>
