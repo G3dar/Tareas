@@ -2,44 +2,56 @@
 
 Sistema de notas para builds de Eggscape con organización automática mediante AI de Anthropic (Claude 4.5).
 
-## 🌐 Despliegue en Render
+## 🌐 Despliegue en Render (Web Service)
 
 ### Pasos para desplegar:
 
-1. **Sube el código a GitHub**:
+1. **El código ya está en GitHub**: https://github.com/G3dar/Tareas
+
+2. **Crear Web Service en Render**:
+   - Ve a [Render](https://render.com) e inicia sesión
+   - Click en "New +" → **"Web Service"**
+   - Conecta tu cuenta de GitHub
+   - Selecciona el repositorio **"Tareas"**
+   - Configuración:
+     - **Name**: `tareas-eggscape` (o el que prefieras)
+     - **Branch**: `main`
+     - **Runtime**: `Node`
+     - **Build Command**: `npm install`
+     - **Start Command**: `node server.js`
+   - Click en "Create Web Service"
+
+3. **Configurar Variable de Entorno**:
+   - Una vez creado el servicio, ve a la pestaña "Environment"
+   - Click en "Add Environment Variable"
+   - **Key**: `ANTHROPIC_API_KEY`
+   - **Value**: Tu API key de Anthropic (sk-ant-api03-...)
+   - Click en "Save Changes"
+
+4. **Acceso**: Render te dará una URL como `https://tareas-eggscape.onrender.com`
+
+✅ **Seguridad**: La API key está protegida en el servidor y no se expone al navegador.
+
+## 🖥️ Uso Local
+
+1. **Instalar dependencias**:
    ```bash
-   git add .
-   git commit -m "Initial commit"
-   git branch -M main
-   git remote add origin https://github.com/TU_USUARIO/Tareas.git
-   git push -u origin main
+   npm install
    ```
 
-2. **Crea un Web Service en Render**:
-   - Ve a [Render](https://render.com) y crea una cuenta
-   - Click en "New +" → "Web Service"
-   - Conecta tu repositorio de GitHub
-   - Configuración:
-     - **Name**: tareas-eggscape
-     - **Environment**: Node
-     - **Build Command**: (dejar vacío)
-     - **Start Command**: `npm start`
-     - **Plan**: Free
+2. **Configurar API Key**:
+   - Crea un archivo `.env` en la raíz del proyecto
+   - Agrega tu API key:
+     ```
+     ANTHROPIC_API_KEY=tu_api_key_aqui
+     ```
 
-3. **Variables de entorno** (si quieres proteger la API key):
-   - En Render, ve a Environment
-   - Agrega: `ANTHROPIC_API_KEY` con tu clave
-   - Modifica server.js para usar `process.env.ANTHROPIC_API_KEY`
+3. **Iniciar servidor**:
+   ```bash
+   node server.js
+   ```
 
-4. **Accede a tu app**: Render te dará una URL como `https://tareas-eggscape.onrender.com`
-
-## 🚀 Inicio Rápido Local
-
-```bash
-npm start
-```
-
-Luego abre tu navegador en: http://localhost:3000
+4. **Abrir en navegador**: `http://localhost:3000`
 
 ## 📋 Características
 

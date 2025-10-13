@@ -16,6 +16,17 @@ if (!API_KEY || API_KEY === 'YOUR_API_KEY_HERE') {
 }
 
 const server = http.createServer((req, res) => {
+    // Handle CORS preflight
+    if (req.method === 'OPTIONS') {
+        res.writeHead(200, {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type'
+        });
+        res.end();
+        return;
+    }
+
     // Proxy para API de Anthropic
     if (req.url === '/api/categorize' && req.method === 'POST') {
         let body = '';
