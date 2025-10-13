@@ -1559,11 +1559,33 @@
                 if (!response.ok) {
                     const errorText = await response.text();
                     console.error('❌ Error de la API:', errorText);
-                    throw new Error(`HTTP ${response.status}`);
+                    throw new Error(`API returned ${response.status}`);
                 }
 
-                const data = await response.json();
-                console.log('📦 Respuesta API completa:', data);
+                // Intentar parsear JSON con mejor manejo de errores
+                let data;
+                try {
+                    const textResponse = await response.text();
+                    if (!textResponse || textResponse.trim().length === 0) {
+                        throw new Error('Respuesta vacía de la API');
+                    }
+                    data = JSON.parse(textResponse);
+                    console.log('📦 Respuesta API completa:', data);
+                } catch (parseError) {
+                    console.error('❌ Error parseando JSON:', parseError);
+                    throw new Error('Respuesta inválida de la API');
+                }
+
+                // Verificar estructura de la respuesta
+                if (!data.content || !Array.isArray(data.content) || data.content.length === 0) {
+                    console.error('❌ Respuesta sin contenido:', data);
+                    throw new Error('Respuesta sin contenido');
+                }
+
+                if (!data.content[0] || !data.content[0].text) {
+                    console.error('❌ Formato de respuesta inválido:', data);
+                    throw new Error('Formato inválido');
+                }
 
                 const content = data.content[0].text.trim();
                 console.log('📝 Texto de respuesta:', content);
@@ -1571,7 +1593,11 @@
                 const jsonMatch = content.match(/\{[\s\S]*\}/);
                 console.log('🔍 JSON extraído:', jsonMatch ? jsonMatch[0] : 'NO MATCH');
 
-                const suggestion = JSON.parse(jsonMatch ? jsonMatch[0] : content);
+                if (!jsonMatch) {
+                    throw new Error('Sin JSON en respuesta');
+                }
+
+                const suggestion = JSON.parse(jsonMatch[0]);
                 console.log('✅ Objeto parseado:', suggestion);
                 console.log('  → Category:', suggestion.category);
                 console.log('  → Tags:', suggestion.tags);
