@@ -4,9 +4,11 @@ const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
+const { Pool } = require('pg');
 
 const PORT = process.env.PORT || 3000;
 const API_KEY = process.env.ANTHROPIC_API_KEY;
+const DATABASE_URL = process.env.DATABASE_URL;
 const NOTES_FILE = path.join(__dirname, 'notes.json');
 
 if (!API_KEY || API_KEY === 'YOUR_API_KEY_HERE') {
@@ -16,13 +18,101 @@ if (!API_KEY || API_KEY === 'YOUR_API_KEY_HERE') {
     process.exit(1);
 }
 
-// Inicializar archivo de notas si no existe
-if (!fs.existsSync(NOTES_FILE)) {
-    fs.writeFileSync(NOTES_FILE, JSON.stringify({ notes: [], history: [] }, null, 2));
-    console.log('✅ Archivo notes.json creado');
+// Configurar PostgreSQL o fallback a archivo
+let pool = null;
+let useDatabase = false;
+
+if (DATABASE_URL) {
+    // Usar PostgreSQL en producción
+    pool = new Pool({
+        connectionString: DATABASE_URL,
+        ssl: {
+            rejectUnauthorized: false
+        }
+    });
+    useDatabase = true;
+    console.log('✅ Usando PostgreSQL para almacenamiento');
+
+    // Inicializar tabla
+    initDatabase();
+} else {
+    // Usar archivo en desarrollo local
+    console.log('⚠️  DATABASE_URL no encontrada, usando notes.json');
+    if (!fs.existsSync(NOTES_FILE)) {
+        fs.writeFileSync(NOTES_FILE, JSON.stringify({ notes: [], history: [] }, null, 2));
+        console.log('✅ Archivo notes.json creado');
+    }
 }
 
-const server = http.createServer((req, res) => {
+// Inicializar base de datos
+async function initDatabase() {
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS app_data (
+                id INTEGER PRIMARY KEY DEFAULT 1,
+                data JSONB NOT NULL,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT single_row CHECK (id = 1)
+            );
+        `);
+
+        // Verificar si existe la fila, si no crearla
+        const result = await pool.query('SELECT * FROM app_data WHERE id = 1');
+        if (result.rows.length === 0) {
+            await pool.query(
+                'INSERT INTO app_data (id, data) VALUES (1, $1)',
+                [JSON.stringify({ notes: [], history: [] })]
+            );
+            console.log('✅ Tabla app_data inicializada');
+        } else {
+            console.log('✅ Base de datos lista');
+        }
+    } catch (error) {
+        console.error('❌ Error inicializando base de datos:', error);
+    }
+}
+
+// Cargar notas
+async function loadNotes() {
+    if (useDatabase) {
+        try {
+            const result = await pool.query('SELECT data FROM app_data WHERE id = 1');
+            if (result.rows.length > 0) {
+                return result.rows[0].data;
+            }
+            return { notes: [], history: [] };
+        } catch (error) {
+            console.error('❌ Error cargando de PostgreSQL:', error);
+            throw error;
+        }
+    } else {
+        // Leer de archivo
+        const data = fs.readFileSync(NOTES_FILE, 'utf8');
+        return JSON.parse(data);
+    }
+}
+
+// Guardar notas
+async function saveNotes(data) {
+    if (useDatabase) {
+        try {
+            await pool.query(
+                'UPDATE app_data SET data = $1, updated_at = CURRENT_TIMESTAMP WHERE id = 1',
+                [JSON.stringify(data)]
+            );
+            console.log('✅ Notas guardadas en PostgreSQL:', data.notes.length, 'notas');
+        } catch (error) {
+            console.error('❌ Error guardando en PostgreSQL:', error);
+            throw error;
+        }
+    } else {
+        // Guardar en archivo
+        fs.writeFileSync(NOTES_FILE, JSON.stringify(data, null, 2));
+        console.log('✅ Notas guardadas en archivo:', data.notes.length, 'notas');
+    }
+}
+
+const server = http.createServer(async (req, res) => {
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
         res.writeHead(200, {
@@ -37,14 +127,14 @@ const server = http.createServer((req, res) => {
     // Cargar notas
     if (req.url === '/api/notes' && req.method === 'GET') {
         try {
-            const data = fs.readFileSync(NOTES_FILE, 'utf8');
+            const data = await loadNotes();
             res.writeHead(200, {
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*'
             });
-            res.end(data);
+            res.end(JSON.stringify(data));
         } catch (error) {
-            console.error('❌ Error leyendo notes.json:', error);
+            console.error('❌ Error cargando notas:', error);
             res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: 'Error loading notes' }));
         }
@@ -59,18 +149,17 @@ const server = http.createServer((req, res) => {
             body += chunk.toString();
         });
 
-        req.on('end', () => {
+        req.on('end', async () => {
             try {
                 const data = JSON.parse(body);
-                fs.writeFileSync(NOTES_FILE, JSON.stringify(data, null, 2));
-                console.log('✅ Notas guardadas:', data.notes.length, 'notas');
+                await saveNotes(data);
                 res.writeHead(200, {
                     'Content-Type': 'application/json',
                     'Access-Control-Allow-Origin': '*'
                 });
                 res.end(JSON.stringify({ success: true }));
             } catch (error) {
-                console.error('❌ Error guardando notes.json:', error);
+                console.error('❌ Error guardando notas:', error);
                 res.writeHead(500, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: 'Error saving notes' }));
             }
