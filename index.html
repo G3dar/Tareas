@@ -642,6 +642,191 @@
             font-style: italic;
         }
 
+        /* Review Mode Styles */
+        .review-panel {
+            position: fixed;
+            right: -600px;
+            top: 0;
+            width: 600px;
+            height: 100vh;
+            background: #1a1a2e;
+            border-left: 2px solid #ffaa00;
+            transition: right 0.3s ease;
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .review-panel.active {
+            right: 0;
+        }
+
+        .review-header {
+            padding: 15px 20px;
+            background: #0f0f1a;
+            border-bottom: 2px solid #ffaa00;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .review-header h3 {
+            color: #ffaa00;
+        }
+
+        .review-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .review-toggle {
+            background: #3a2010;
+            color: #ffaa00;
+            border: 2px solid #ffaa0044;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+        }
+
+        .review-toggle.active {
+            background: #5a3010;
+            border-color: #ffaa00;
+        }
+
+        .review-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .review-item {
+            background: #0f0f1a;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            border-left: 3px solid #ffaa00;
+        }
+
+        .review-item.accepted {
+            border-left-color: #00ff88;
+            background: #0f1a14;
+        }
+
+        .review-item.rejected {
+            border-left-color: #e94560;
+            background: #1a0f14;
+        }
+
+        .review-item-text {
+            color: #eee;
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+        }
+
+        .review-item-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+            font-size: 0.75rem;
+        }
+
+        .review-meta-badge {
+            background: #16213e;
+            color: #00ff88;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.7rem;
+        }
+
+        .review-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .review-btn-accept, .review-btn-reject {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .review-btn-accept {
+            background: #00ff88;
+            color: #0a0a0f;
+        }
+
+        .review-btn-accept:hover {
+            background: #00ffaa;
+            transform: scale(1.05);
+        }
+
+        .review-btn-reject {
+            background: #e94560;
+            color: white;
+        }
+
+        .review-btn-reject:hover {
+            background: #ff6680;
+            transform: scale(1.05);
+        }
+
+        .review-comment-input {
+            width: 100%;
+            background: #0f0f1a;
+            border: 2px solid #e94560;
+            color: #eee;
+            padding: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        .review-comment-input:focus {
+            outline: none;
+            border-color: #ff6680;
+            box-shadow: 0 0 10px rgba(233, 69, 96, 0.3);
+        }
+
+        .review-comment-display {
+            margin-top: 10px;
+            padding: 8px;
+            background: #1a0f14;
+            border-left: 3px solid #e94560;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            color: #ff6680;
+        }
+
+        .review-status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .review-status-accepted {
+            background: #00ff88;
+            color: #0a0a0f;
+        }
+
+        .review-status-rejected {
+            background: #e94560;
+            color: white;
+        }
+
         @media (max-width: 1024px) {
             .notes-section {
                 width: 350px;
@@ -673,6 +858,9 @@
             <div class="date">2025-10-13</div>
             <button class="assignment-mode-toggle" id="assignmentModeBtn" onclick="toggleAssignmentMode()">
                 👥 MODO ASIGNACIÓN
+            </button>
+            <button class="assignment-mode-toggle" id="reviewModeBtn" onclick="toggleReviewMode()" style="background: #3a2010; color: #ffaa00; border-color: #ffaa0044;">
+                ✓ MODO REVISIÓN
             </button>
             <button class="history-toggle" onclick="exportNotes()" style="padding: 6px 12px; font-size: 0.85rem;">📥 Exportar</button>
             <button class="history-toggle" onclick="exportByPerson()" style="padding: 6px 12px; font-size: 0.85rem;">👥 Exportar por Persona</button>
@@ -729,12 +917,29 @@
         </div>
     </div>
 
+    <div class="review-panel" id="reviewPanel">
+        <div class="review-header">
+            <h3>✓ Modo Revisión</h3>
+            <div class="review-controls">
+                <button class="review-toggle" id="reviewGroupToggle" onclick="toggleReviewGrouping()">
+                    Por Persona
+                </button>
+                <button class="close-btn" onclick="toggleReviewMode()">Cerrar</button>
+            </div>
+        </div>
+        <div class="review-content" id="reviewContent">
+            <div class="empty-state">No hay notas para revisar</div>
+        </div>
+    </div>
+
     <script>
         // Estado de la aplicación
         let notes = [];
         let history = [];
         let assignmentMode = false;
         let collapsedAssignments = new Set(); // IDs de notas con asignaciones colapsadas
+        let reviewMode = false;
+        let reviewGroupByPerson = true; // true = por persona, false = por categoría/tags
 
         // Lista de personas para asignar
         const people = ['VALEN', 'PABLO', 'MATI', 'LUKAKU', 'LUCASM', 'FEDEM', 'AGUS'];
@@ -755,6 +960,255 @@
             'VEHICLES', 'TUTORIAL', 'COMBAT', 'VOICECHAT', 'PERFORMANCE', 'TOOLS',
             'COSMETICS', 'BUILDER', 'POWERUPS', 'LOGS', 'CAMERA', 'RACE MODE'
         ];
+
+        // ===== REVIEW MODE FUNCTIONS =====
+
+        // Toggle modo revisión
+        function toggleReviewMode() {
+            reviewMode = !reviewMode;
+            const btn = document.getElementById('reviewModeBtn');
+            const panel = document.getElementById('reviewPanel');
+
+            if (reviewMode) {
+                btn.classList.add('active');
+                panel.classList.add('active');
+                renderReviewMode();
+            } else {
+                btn.classList.remove('active');
+                panel.classList.remove('active');
+            }
+        }
+
+        // Toggle agrupamiento (persona vs categoría)
+        function toggleReviewGrouping() {
+            reviewGroupByPerson = !reviewGroupByPerson;
+            const btn = document.getElementById('reviewGroupToggle');
+            btn.textContent = reviewGroupByPerson ? 'Por Persona' : 'Por Categoría';
+            renderReviewMode();
+        }
+
+        // Renderizar modo revisión
+        function renderReviewMode() {
+            const container = document.getElementById('reviewContent');
+
+            if (notes.length === 0) {
+                container.innerHTML = '<div class="empty-state">No hay notas para revisar</div>';
+                return;
+            }
+
+            let html = '';
+
+            if (reviewGroupByPerson) {
+                // Agrupar por persona
+                const byPerson = {};
+                const unassigned = [];
+
+                notes.forEach(note => {
+                    if (note.assignedTo && note.assignedTo.length > 0) {
+                        note.assignedTo.forEach(person => {
+                            if (!byPerson[person]) byPerson[person] = [];
+                            byPerson[person].push(note);
+                        });
+                    } else {
+                        unassigned.push(note);
+                    }
+                });
+
+                // Renderizar por persona
+                const sortedPeople = Object.keys(byPerson).sort();
+                sortedPeople.forEach(person => {
+                    html += `<div style="margin-bottom: 30px;">
+                        <div style="color: #ffaa00; font-weight: bold; font-size: 1.1rem; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #ffaa0044;">
+                            👤 ${person} (${byPerson[person].length})
+                        </div>`;
+                    byPerson[person].forEach(note => {
+                        html += renderReviewItem(note);
+                    });
+                    html += `</div>`;
+                });
+
+                // Sin asignar
+                if (unassigned.length > 0) {
+                    html += `<div style="margin-bottom: 30px;">
+                        <div style="color: #ffaa00; font-weight: bold; font-size: 1.1rem; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #ffaa0044;">
+                            📋 Sin Asignar (${unassigned.length})
+                        </div>`;
+                    unassigned.forEach(note => {
+                        html += renderReviewItem(note);
+                    });
+                    html += `</div>`;
+                }
+            } else {
+                // Agrupar por categoría y tags
+                const grouped = {};
+                notes.forEach(note => {
+                    const category = note.category || 'Other';
+                    if (!grouped[category]) grouped[category] = {};
+
+                    if (note.tags && note.tags.length > 0) {
+                        note.tags.forEach(tag => {
+                            if (!grouped[category][tag]) grouped[category][tag] = [];
+                            grouped[category][tag].push(note);
+                        });
+                    } else {
+                        if (!grouped[category]['General']) grouped[category]['General'] = [];
+                        grouped[category]['General'].push(note);
+                    }
+                });
+
+                // Renderizar por categoría
+                Object.entries(grouped).forEach(([category, tagGroups]) => {
+                    const totalInCategory = Object.values(tagGroups).flat().length;
+                    html += `<div style="margin-bottom: 30px;">
+                        <div style="color: #ffaa00; font-weight: bold; font-size: 1.1rem; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #ffaa0044;">
+                            ${getCategoryEmoji(category)} ${category} (${totalInCategory})
+                        </div>`;
+
+                    Object.entries(tagGroups).forEach(([tag, tagNotes]) => {
+                        html += `<div style="margin-bottom: 20px;">
+                            <div style="color: #888; font-size: 0.9rem; margin-bottom: 10px;">
+                                ${tag} (${tagNotes.length})
+                            </div>`;
+                        tagNotes.forEach(note => {
+                            html += renderReviewItem(note);
+                        });
+                        html += `</div>`;
+                    });
+
+                    html += `</div>`;
+                });
+            }
+
+            container.innerHTML = html;
+        }
+
+        // Renderizar un item de revisión
+        function renderReviewItem(note) {
+            const statusClass = note.reviewStatus ? note.reviewStatus : '';
+
+            let html = `<div class="review-item ${statusClass}">`;
+
+            // Status badge si existe
+            if (note.reviewStatus === 'accepted') {
+                html += `<div class="review-status-badge review-status-accepted">✓ ACEPTADO</div>`;
+            } else if (note.reviewStatus === 'rejected') {
+                html += `<div class="review-status-badge review-status-rejected">✗ RECHAZADO</div>`;
+            }
+
+            // Texto de la nota
+            html += `<div class="review-item-text">${escapeHtml(note.text)}</div>`;
+
+            // Metadata
+            html += `<div class="review-item-meta">`;
+            if (note.category) html += `<span class="review-meta-badge">${getCategoryEmoji(note.category)} ${note.category}</span>`;
+            if (note.tags && note.tags.length > 0) {
+                note.tags.forEach(tag => {
+                    html += `<span class="review-meta-badge">${tag}</span>`;
+                });
+            }
+            if (note.assignedTo && note.assignedTo.length > 0) {
+                note.assignedTo.forEach(person => {
+                    html += `<span class="review-meta-badge" style="background: #2e1a3a; color: #ff88ff;">👤 ${person}</span>`;
+                });
+            }
+            if (note.difficulty) {
+                html += `<span class="review-meta-badge" style="background: #1a3a2e;">📊 ${note.difficulty.toUpperCase()}</span>`;
+            }
+            if (note.priority) {
+                html += `<span class="review-meta-badge" style="background: ${getPriorityColor(note.priority)};">⚡ ${note.priority.toUpperCase()}</span>`;
+            }
+            html += `</div>`;
+
+            // Comentario de rechazo si existe
+            if (note.reviewStatus === 'rejected' && note.rejectionComment) {
+                html += `<div class="review-comment-display">
+                    <strong>Comentario:</strong> ${escapeHtml(note.rejectionComment)}
+                </div>`;
+            }
+
+            // Botones de acción (solo si no ha sido revisado)
+            if (!note.reviewStatus) {
+                html += `<div class="review-actions">
+                    <button class="review-btn-accept" onclick="acceptNote(${note.id})">✓ ACEPTADO</button>
+                    <button class="review-btn-reject" onclick="showRejectInput(${note.id})">✗ RECHAZADO</button>
+                </div>`;
+            }
+
+            html += `</div>`;
+            return html;
+        }
+
+        // Aceptar nota
+        function acceptNote(noteId) {
+            const noteIndex = notes.findIndex(n => n.id === noteId);
+            if (noteIndex !== -1) {
+                notes[noteIndex].reviewStatus = 'accepted';
+                notes[noteIndex].rejectionComment = '';
+                saveToLocalStorage();
+                addToHistory('review', `Aceptada: "${notes[noteIndex].text}"`);
+                renderReviewMode();
+            }
+        }
+
+        // Mostrar input para rechazar nota
+        function showRejectInput(noteId) {
+            const noteIndex = notes.findIndex(n => n.id === noteId);
+            if (noteIndex === -1) return;
+
+            // Renderizar de nuevo mostrando el input
+            const container = document.getElementById('reviewContent');
+            const currentScroll = container.scrollTop;
+
+            renderReviewMode();
+
+            // Buscar el item y agregar el input
+            const items = container.querySelectorAll('.review-item');
+            let targetItem = null;
+
+            // Encontrar el item correcto por su texto
+            for (const item of items) {
+                const textDiv = item.querySelector('.review-item-text');
+                if (textDiv && textDiv.textContent === notes[noteIndex].text) {
+                    targetItem = item;
+                    break;
+                }
+            }
+
+            if (targetItem) {
+                const actionsDiv = targetItem.querySelector('.review-actions');
+                if (actionsDiv) {
+                    actionsDiv.innerHTML = `
+                        <input type="text"
+                               class="review-comment-input"
+                               id="reject-comment-${noteId}"
+                               placeholder="Ingresa el comentario y presiona Enter..."
+                               onkeypress="if(event.key==='Enter') saveRejection(${noteId}, this.value)"
+                               style="width: 100%; margin-top: 10px;">
+                    `;
+
+                    // Auto-focus y mantener scroll
+                    setTimeout(() => {
+                        const input = document.getElementById(`reject-comment-${noteId}`);
+                        if (input) {
+                            input.focus();
+                            container.scrollTop = currentScroll;
+                        }
+                    }, 50);
+                }
+            }
+        }
+
+        // Guardar rechazo con comentario
+        function saveRejection(noteId, comment) {
+            const noteIndex = notes.findIndex(n => n.id === noteId);
+            if (noteIndex !== -1) {
+                notes[noteIndex].reviewStatus = 'rejected';
+                notes[noteIndex].rejectionComment = comment.trim();
+                saveToLocalStorage();
+                addToHistory('review', `Rechazada: "${notes[noteIndex].text}" - ${comment}`);
+                renderReviewMode();
+            }
+        }
 
         // Inicializar
         function init() {
@@ -794,6 +1248,8 @@
                 priority: null, // Sin prioridad por defecto
                 difficulty: null, // Sin dificultad por defecto
                 assignedTo: [], // Sin asignaciones por defecto
+                reviewStatus: null, // 'accepted' | 'rejected' | null
+                rejectionComment: '', // Comentario si fue rechazado
                 timestamp: new Date().toISOString(),
                 aiProcessed: false
             };
@@ -1632,6 +2088,8 @@
                         if (!note.assignedTo) note.assignedTo = [];
                         if (!note.difficulty) note.difficulty = null;
                         if (!note.priority) note.priority = null;
+                        if (!note.reviewStatus) note.reviewStatus = null;
+                        if (!note.rejectionComment) note.rejectionComment = '';
 
                         notes.push(note);
                         addTerminalLine(note.text, note.id);
