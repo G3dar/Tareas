@@ -7,12 +7,19 @@ const path = require('path');
 
 const PORT = process.env.PORT || 3000;
 const API_KEY = process.env.ANTHROPIC_API_KEY;
+const NOTES_FILE = path.join(__dirname, 'notes.json');
 
 if (!API_KEY || API_KEY === 'YOUR_API_KEY_HERE') {
     console.error('❌ ERROR: ANTHROPIC_API_KEY no está configurada');
     console.error('Por favor crea un archivo .env con tu API key de Anthropic');
     console.error('Ejemplo: ANTHROPIC_API_KEY=tu_api_key_aqui');
     process.exit(1);
+}
+
+// Inicializar archivo de notas si no existe
+if (!fs.existsSync(NOTES_FILE)) {
+    fs.writeFileSync(NOTES_FILE, JSON.stringify({ notes: [], history: [] }, null, 2));
+    console.log('✅ Archivo notes.json creado');
 }
 
 const server = http.createServer((req, res) => {
@@ -24,6 +31,50 @@ const server = http.createServer((req, res) => {
             'Access-Control-Allow-Headers': 'Content-Type'
         });
         res.end();
+        return;
+    }
+
+    // Cargar notas
+    if (req.url === '/api/notes' && req.method === 'GET') {
+        try {
+            const data = fs.readFileSync(NOTES_FILE, 'utf8');
+            res.writeHead(200, {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            });
+            res.end(data);
+        } catch (error) {
+            console.error('❌ Error leyendo notes.json:', error);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Error loading notes' }));
+        }
+        return;
+    }
+
+    // Guardar notas
+    if (req.url === '/api/notes' && req.method === 'POST') {
+        let body = '';
+
+        req.on('data', chunk => {
+            body += chunk.toString();
+        });
+
+        req.on('end', () => {
+            try {
+                const data = JSON.parse(body);
+                fs.writeFileSync(NOTES_FILE, JSON.stringify(data, null, 2));
+                console.log('✅ Notas guardadas:', data.notes.length, 'notas');
+                res.writeHead(200, {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                });
+                res.end(JSON.stringify({ success: true }));
+            } catch (error) {
+                console.error('❌ Error guardando notes.json:', error);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Error saving notes' }));
+            }
+        });
         return;
     }
 

@@ -734,6 +734,61 @@
             font-weight: normal;
         }
 
+        .review-nav {
+            background: #0f0f1a;
+            padding: 15px 40px;
+            border-bottom: 2px solid #ffaa0044;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .review-nav-link {
+            background: #1a1a2e;
+            color: #ffaa00;
+            padding: 8px 16px;
+            border-radius: 4px;
+            border: 2px solid #ffaa0044;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .review-nav-link:hover {
+            background: #3a2010;
+            border-color: #ffaa00;
+            transform: translateY(-2px);
+        }
+
+        .review-nav-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            padding-left: 20px;
+            margin-left: 20px;
+            border-left: 2px solid #ffaa0044;
+        }
+
+        .review-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #ffaa00;
+            font-size: 0.85rem;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .review-checkbox input[type="checkbox"] {
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+        }
+
         .review-item {
             background: #1a1a2e;
             padding: 20px;
@@ -1249,8 +1304,8 @@
         }
 
         // Inicializar
-        function init() {
-            loadFromLocalStorage();
+        async function init() {
+            await loadFromLocalStorage();
             renderNotes();
             renderHistory();
 
@@ -2161,27 +2216,66 @@
             reader.readAsText(file);
         }
 
-        // Guardar/Cargar localStorage
-        function saveToLocalStorage() {
+        // Guardar/Cargar desde servidor
+        async function saveToLocalStorage() {
+            // Guardar localmente también como backup
             localStorage.setItem('eggscape_notes', JSON.stringify(notes));
             localStorage.setItem('eggscape_history', JSON.stringify(history));
+
+            // Guardar en servidor
+            try {
+                const response = await fetch('/api/notes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        notes: notes,
+                        history: history
+                    })
+                });
+
+                if (!response.ok) {
+                    console.error('⚠️ Error guardando en servidor');
+                }
+            } catch (error) {
+                console.error('⚠️ Error guardando en servidor:', error);
+            }
         }
 
-        function loadFromLocalStorage() {
-            const savedNotes = localStorage.getItem('eggscape_notes');
-            const savedHistory = localStorage.getItem('eggscape_history');
-
-            if (savedNotes) {
-                notes = JSON.parse(savedNotes);
-                notes.forEach(note => {
-                    addTerminalLine(note.text, note.id);
-                    if (note.aiProcessed) {
-                        // Usar badges visuales si tiene categoría
-                        updateTerminalLine(note.id, null, false, note.category, note.tags || []);
-                    }
-                });
+        async function loadFromLocalStorage() {
+            try {
+                // Cargar desde servidor
+                const response = await fetch('/api/notes');
+                if (response.ok) {
+                    const data = await response.json();
+                    notes = data.notes || [];
+                    history = data.history || [];
+                    console.log('✅ Notas cargadas desde servidor:', notes.length);
+                } else {
+                    // Fallback a localStorage
+                    console.log('⚠️ Usando localStorage como fallback');
+                    const savedNotes = localStorage.getItem('eggscape_notes');
+                    const savedHistory = localStorage.getItem('eggscape_history');
+                    if (savedNotes) notes = JSON.parse(savedNotes);
+                    if (savedHistory) history = JSON.parse(savedHistory);
+                }
+            } catch (error) {
+                // Fallback a localStorage
+                console.error('⚠️ Error cargando desde servidor, usando localStorage:', error);
+                const savedNotes = localStorage.getItem('eggscape_notes');
+                const savedHistory = localStorage.getItem('eggscape_history');
+                if (savedNotes) notes = JSON.parse(savedNotes);
+                if (savedHistory) history = JSON.parse(savedHistory);
             }
-            if (savedHistory) history = JSON.parse(savedHistory);
+
+            // Renderizar notas cargadas
+            notes.forEach(note => {
+                addTerminalLine(note.text, note.id);
+                if (note.aiProcessed) {
+                    updateTerminalLine(note.id, null, false, note.category, note.tags || []);
+                }
+            });
         }
 
         // Utilidades
