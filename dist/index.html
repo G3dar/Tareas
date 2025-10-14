@@ -3191,28 +3191,26 @@
 
         // Funciones para asignación en tarjetas (note cards)
         function togglePersonInCard(noteId, person, event) {
-            event.preventDefault();
             event.stopPropagation();
 
             const noteIndex = notes.findIndex(n => n.id === noteId);
             if (noteIndex !== -1) {
                 if (!notes[noteIndex].assignedTo) notes[noteIndex].assignedTo = [];
+
+                const checkbox = event.target;
+                const isChecked = checkbox.checked;
                 const index = notes[noteIndex].assignedTo.indexOf(person);
 
-                // Actualizar estado interno
-                if (index > -1) {
-                    notes[noteIndex].assignedTo.splice(index, 1);
-                } else {
+                // Actualizar estado interno según el estado del checkbox
+                if (isChecked && index === -1) {
                     notes[noteIndex].assignedTo.push(person);
+                } else if (!isChecked && index > -1) {
+                    notes[noteIndex].assignedTo.splice(index, 1);
                 }
 
-                // Actualizar visualmente el checkbox sin re-renderizar todo
-                const label = event.target.closest('label');
-                const checkbox = label.querySelector('input[type="checkbox"]');
-                checkbox.checked = notes[noteIndex].assignedTo.includes(person);
-
-                // Actualizar clase CSS
-                if (checkbox.checked) {
+                // Actualizar clase CSS del label
+                const label = checkbox.closest('label');
+                if (isChecked) {
                     label.classList.add('selected');
                 } else {
                     label.classList.remove('selected');
@@ -3576,11 +3574,11 @@
                                     <div style="display: flex; flex-wrap: wrap; gap: 6px;">
                                         ${people.map(person => `
                                             <label class="person-checkbox ${note.assignedTo && note.assignedTo.includes(person) ? 'selected' : ''}"
-                                                   style="padding: 6px 12px; cursor: pointer;"
-                                                   onclick="togglePersonInCard(${note.id}, '${person}', event)">
+                                                   style="padding: 6px 12px; cursor: pointer;">
                                                 <input type="checkbox"
                                                        value="${person}"
                                                        ${note.assignedTo && note.assignedTo.includes(person) ? 'checked' : ''}
+                                                       onchange="togglePersonInCard(${note.id}, '${person}', event)"
                                                        style="margin-right: 4px;">
                                                 ${person}
                                             </label>
