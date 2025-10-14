@@ -2142,68 +2142,112 @@
 
         // Renderizar un item de revisión
         function renderReviewItem(note) {
-            const statusClass = note.reviewStatus ? note.reviewStatus : '';
+            const currentStatus = note.workStatus || 'not_started';
+            const statusColor = workStatusColors[currentStatus];
+            const statusLabel = workStatusLabels[currentStatus];
 
-            let html = `<div class="review-item ${statusClass}">`;
+            let html = `<div class="review-item">`;
 
-            // Status badge si existe
-            if (note.reviewStatus === 'accepted') {
-                html += `<div class="review-status-badge review-status-accepted">✓ ACEPTADO</div>`;
-            } else if (note.reviewStatus === 'rejected') {
-                html += `<div class="review-status-badge review-status-rejected">✗ RECHAZADO</div>`;
+            // ===== STATUS ARRIBA (muy separado) =====
+            html += `<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #1a1a2e;">`;
+
+            // Status actual (clickeable para dropdown)
+            html += `<div style="position: relative;">
+                <div class="work-status-badge"
+                     onclick="toggleWorkStatusSelector(${note.id}, event)"
+                     style="background: ${statusColor}; cursor: pointer; font-size: 1rem; padding: 8px 16px;">
+                    ${statusLabel}
+                </div>
+
+                <!-- Dropdown de estados -->
+                <div class="work-status-selector" id="work-status-selector-${note.id}">
+                    <button class="work-status-option" style="background: ${workStatusColors.not_started};" onclick="setWorkStatus(${note.id}, 'not_started', event)">⭕ NO EMPEZADO</button>
+                    <button class="work-status-option" style="background: ${workStatusColors.wip};" onclick="setWorkStatus(${note.id}, 'wip', event)">🔄 WIP</button>
+                    <button class="work-status-option" style="background: ${workStatusColors.awaiting_review};" onclick="setWorkStatus(${note.id}, 'awaiting_review', event)">⏳ ESPERANDO REVISIÓN</button>
+                    <button class="work-status-option" style="background: ${workStatusColors.accepted};" onclick="setWorkStatus(${note.id}, 'accepted', event)">✅ ACEPTADO</button>
+                    <button class="work-status-option" style="background: ${workStatusColors.rejected};" onclick="setWorkStatus(${note.id}, 'rejected', event)">❌ RECHAZADO</button>
+                </div>
+            </div>`;
+
+            // Botón de siguiente estado
+            if (currentStatus === 'not_started') {
+                html += `<button onclick="advanceWorkStatus(${note.id})" style="padding: 8px 16px; background: ${workStatusColors.wip}; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-family: 'Courier New', monospace; font-size: 0.95rem;">▶ Empezar</button>`;
+            } else if (currentStatus === 'wip') {
+                html += `<button onclick="advanceWorkStatus(${note.id})" style="padding: 8px 16px; background: ${workStatusColors.awaiting_review}; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-family: 'Courier New', monospace; font-size: 0.95rem;">✓ Listo para Revisión</button>`;
+            } else if (currentStatus === 'awaiting_review') {
+                html += `<button onclick="setWorkStatus(${note.id}, 'accepted', event)" style="padding: 6px 12px; background: ${workStatusColors.accepted}; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-family: 'Courier New', monospace; font-size: 0.9rem; margin-right: 5px;">✓ Aceptar</button>`;
+                html += `<button onclick="setWorkStatus(${note.id}, 'rejected', event)" style="padding: 6px 12px; background: ${workStatusColors.rejected}; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-family: 'Courier New', monospace; font-size: 0.9rem;">✗ Rechazar</button>`;
             }
 
-            // Texto de la nota
-            html += `<div class="review-item-text">${escapeHtml(note.text)}</div>`;
+            html += `</div>`;
 
-            // Metadata
-            html += `<div class="review-item-meta" style="position: relative;">`;
-            if (note.category) html += `<span class="review-meta-badge">${getCategoryEmoji(note.category)} ${note.category}</span>`;
+            // ===== TEXTO DE LA NOTA =====
+            html += `<div class="review-item-text" style="margin-bottom: 15px; font-size: 1.05rem;">${escapeHtml(note.text)}</div>`;
+
+            // ===== TODO LO DEMÁS ABAJO =====
+            html += `<div class="review-item-meta" style="display: flex; gap: 8px; flex-wrap: wrap;">`;
+
+            // Categoría
+            if (note.category) {
+                html += `<span class="review-meta-badge">${getCategoryEmoji(note.category)} ${note.category}</span>`;
+            }
+
+            // Tags
             if (note.tags && note.tags.length > 0) {
                 note.tags.forEach(tag => {
                     html += `<span class="review-meta-badge">${tag}</span>`;
                 });
             }
+
+            // Personas asignadas
             if (note.assignedTo && note.assignedTo.length > 0) {
                 note.assignedTo.forEach(person => {
-                    html += `<span class="review-meta-badge" style="background: #2e1a3a; color: #ff88ff;">👤 ${person}</span>`;
+                    const personColor = personColors[person] || '#ff88ff';
+                    html += `<span class="review-meta-badge" style="background: ${personColor}; color: #000; font-weight: bold;">👤 ${person}</span>`;
                 });
             }
+
+            // Dificultad
             if (note.difficulty) {
                 html += `<span class="review-meta-badge" style="background: #1a3a2e;">📊 ${note.difficulty.toUpperCase()}</span>`;
             }
+
+            // Prioridad
             if (note.priority) {
                 html += `<span class="review-meta-badge" style="background: ${getPriorityColor(note.priority)};">⚡ <span style="color: #000; font-weight: bold;">${note.priority.toUpperCase()}</span></span>`;
             }
-            html += `<span class="work-status-badge" onclick="toggleWorkStatusSelector(${note.id}, event)" style="background: ${workStatusColors[note.workStatus || 'not_started']};">${workStatusLabels[note.workStatus || 'not_started']}</span>`;
+
             html += `</div>`;
 
-            // Work status selector
-            html += `<div class="work-status-selector" id="work-status-selector-${note.id}" style="position: absolute; top: auto; left: auto;">
-                <button class="work-status-option" style="background: ${workStatusColors.not_started};" onclick="setWorkStatus(${note.id}, 'not_started', event)">⭕ NO EMPEZADO</button>
-                <button class="work-status-option" style="background: ${workStatusColors.wip};" onclick="setWorkStatus(${note.id}, 'wip', event)">🔄 WIP</button>
-                <button class="work-status-option" style="background: ${workStatusColors.awaiting_review};" onclick="setWorkStatus(${note.id}, 'awaiting_review', event)">⏳ ESPERANDO REVISIÓN</button>
-                <button class="work-status-option" style="background: ${workStatusColors.accepted};" onclick="setWorkStatus(${note.id}, 'accepted', event)">✅ ACEPTADO</button>
-                <button class="work-status-option" style="background: ${workStatusColors.rejected};" onclick="setWorkStatus(${note.id}, 'rejected', event)">❌ RECHAZADO</button>
-            </div>`;
-
             // Comentario de rechazo si existe
-            if (note.reviewStatus === 'rejected' && note.rejectionComment) {
-                html += `<div class="review-comment-display">
+            if (note.workStatus === 'rejected' && note.rejectionComment) {
+                html += `<div class="review-comment-display" style="margin-top: 10px;">
                     <strong>Comentario:</strong> ${escapeHtml(note.rejectionComment)}
-                </div>`;
-            }
-
-            // Botones de acción (solo si no ha sido revisado)
-            if (!note.reviewStatus) {
-                html += `<div class="review-actions">
-                    <button class="review-btn-accept" onclick="acceptNote(${note.id})">✓ ACEPTADO</button>
-                    <button class="review-btn-reject" onclick="showRejectInput(${note.id})">✗ RECHAZADO</button>
                 </div>`;
             }
 
             html += `</div>`;
             return html;
+        }
+
+        // Avanzar al siguiente estado de trabajo
+        function advanceWorkStatus(noteId) {
+            const noteIndex = notes.findIndex(n => n.id === noteId);
+            if (noteIndex === -1) return;
+
+            const currentStatus = notes[noteIndex].workStatus || 'not_started';
+            let nextStatus = currentStatus;
+
+            if (currentStatus === 'not_started') {
+                nextStatus = 'wip';
+            } else if (currentStatus === 'wip') {
+                nextStatus = 'awaiting_review';
+            }
+
+            notes[noteIndex].workStatus = nextStatus;
+            saveToLocalStorage();
+            addToHistory('work_status', `"${notes[noteIndex].text}" → ${workStatusLabels[nextStatus]}`);
+            renderReviewMode();
         }
 
         // Aceptar nota
