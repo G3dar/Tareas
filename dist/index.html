@@ -1333,15 +1333,16 @@
     <div class="main-container">
         <div class="terminal-section">
             <div id="assignmentFilterBar" style="display: none; padding: 10px 15px; background: #0f0f1a; border-bottom: 1px solid #1a1a2e;">
-                <label style="display: flex; align-items: center; gap: 8px; color: #00ff88; font-size: 0.9rem; cursor: pointer;">
-                    <input
-                        type="checkbox"
-                        id="assignmentHideAcceptedCheckbox"
-                        onchange="toggleAssignmentHideAccepted()"
-                        style="cursor: pointer;"
-                    >
-                    Ocultar aceptados
-                </label>
+                <input
+                    type="text"
+                    id="assignmentFilterInput"
+                    placeholder="🔍 Filtrar por palabra clave..."
+                    oninput="filterAssignmentNotes()"
+                    style="width: 100%; padding: 8px 12px; background: #16213e; border: 1px solid #00ff8844; border-radius: 4px; color: #eee; font-size: 0.9rem; margin-bottom: 10px;"
+                >
+                <div id="assignmentPersonFilters" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                    <!-- Los filtros se generarán dinámicamente aquí -->
+                </div>
             </div>
             <div class="terminal-output" id="terminalOutput">
                 <div style="color: #00ff88; margin-bottom: 20px; font-size: 1.1rem;">
@@ -1450,6 +1451,8 @@
         let assignmentMode = false;
         let assignmentViewMode = 'category'; // 'category' o 'person'
         let assignmentHideAccepted = false; // Ocultar tareas aceptadas en modo asignación
+        let assignmentFilterText = ''; // Texto del filtro de asignación
+        let assignmentFilterPerson = null; // Filtro por persona en modo asignación (null = todas)
         let collapsedAssignments = new Set(); // IDs de notas con asignaciones colapsadas
         let reviewMode = false;
         let reviewGroupByPerson = true; // true = por persona, false = por categoría/tags
@@ -1613,6 +1616,69 @@
                 // Fallback si no hay soporte para clipboard API
                 prompt('Copia este link:', personalUrl);
             }
+        }
+
+        // Renderizar filtros de personas para modo asignación
+        function renderAssignmentFilters() {
+            const container = document.getElementById('assignmentPersonFilters');
+            if (!container) return;
+
+            let html = `
+                <label style="display: flex; align-items: center; gap: 6px; color: #00ff88; font-size: 0.9rem; cursor: pointer;">
+                    <input
+                        type="checkbox"
+                        id="assignmentHideAcceptedCheckbox"
+                        onchange="toggleAssignmentHideAccepted()"
+                        style="cursor: pointer;"
+                        ${assignmentHideAccepted ? 'checked' : ''}
+                    >
+                    Ocultar aceptados
+                </label>
+                <div style="border-left: 2px solid #16213e; height: 20px; margin: 0 5px;"></div>
+                <span style="color: #888; font-size: 0.85rem;">Filtrar por persona:</span>
+                <button
+                    onclick="filterAssignmentByPerson(null)"
+                    style="padding: 4px 10px; background: ${assignmentFilterPerson === null ? '#00ff88' : '#16213e'}; color: ${assignmentFilterPerson === null ? '#0a0a0f' : '#00ff88'}; border: 1px solid #00ff8844; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: ${assignmentFilterPerson === null ? 'bold' : 'normal'};"
+                >
+                    Todas
+                </button>
+            `;
+
+            people.forEach(person => {
+                html += `
+                    <div style="display: flex; gap: 3px; align-items: center;">
+                        <button
+                            onclick="filterAssignmentByPerson('${person}')"
+                            style="padding: 4px 10px; background: ${assignmentFilterPerson === person ? '#00ff88' : '#16213e'}; color: ${assignmentFilterPerson === person ? '#0a0a0f' : '#00ff88'}; border: 1px solid #00ff8844; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: ${assignmentFilterPerson === person ? 'bold' : 'normal'};"
+                        >
+                            ${person}
+                        </button>
+                        <button
+                            onclick="copyPersonLink('${person}', event)"
+                            style="padding: 4px 8px; background: #16213e; color: #00ff88; border: 1px solid #00ff8844; border-radius: 4px; cursor: pointer; font-size: 0.85rem;"
+                            title="Copiar link personal de ${person}"
+                        >
+                            📋
+                        </button>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Filtrar por persona en modo asignación
+        function filterAssignmentByPerson(person) {
+            assignmentFilterPerson = person;
+            renderAssignmentFilters();
+            renderNotes();
+        }
+
+        // Filtrar por texto en modo asignación
+        function filterAssignmentNotes() {
+            const input = document.getElementById('assignmentFilterInput');
+            assignmentFilterText = input.value.toLowerCase();
+            renderNotes();
         }
 
         // Toggle ocultar aceptados
@@ -2437,6 +2503,8 @@
             if (assignmentMode) {
                 btn.classList.add('active');
                 if (filterBar) filterBar.style.display = 'block';
+                // Renderizar los filtros de personas
+                renderAssignmentFilters();
                 // Al entrar en modo asignación, NO limpiar las colapsadas
                 // Las tareas ya asignadas se muestran con icono de editar
             } else {
@@ -2504,7 +2572,13 @@
             const checkbox = document.getElementById('assignmentHideAcceptedCheckbox');
             assignmentHideAccepted = checkbox.checked;
 
-            // Solo re-renderizar si estamos en modo asignación
+            // Re-renderizar filtros para mantener el estado del checkbox sincronizado
+            renderAssignmentFilters();
+
+            // Re-renderizar notas con el filtro actualizado
+            renderNotes();
+
+            // Solo re-renderizar terminal si estamos en modo asignación
             if (assignmentMode) {
                 // Re-renderizar todas las líneas del terminal con el filtro actualizado
                 let notesToRender = notes;
@@ -2706,11 +2780,41 @@
                 return;
             }
 
-            countEl.textContent = `${notes.length} nota${notes.length !== 1 ? 's' : ''}`;
+            // Aplicar filtros de asignación
+            let filteredNotes = notes;
+
+            // Filtrar por persona si está en modo asignación
+            if (assignmentMode && assignmentFilterPerson !== null) {
+                filteredNotes = filteredNotes.filter(note =>
+                    note.assignedTo && note.assignedTo.includes(assignmentFilterPerson)
+                );
+            }
+
+            // Filtrar por texto
+            if (assignmentMode && assignmentFilterText) {
+                filteredNotes = filteredNotes.filter(note =>
+                    note.text.toLowerCase().includes(assignmentFilterText) ||
+                    (note.category && note.category.toLowerCase().includes(assignmentFilterText)) ||
+                    (note.tags && note.tags.some(tag => tag.toLowerCase().includes(assignmentFilterText)))
+                );
+            }
+
+            // Filtrar por ocultar aceptados
+            if (assignmentMode && assignmentHideAccepted) {
+                filteredNotes = filteredNotes.filter(note => note.reviewStatus !== 'accepted');
+            }
+
+            if (filteredNotes.length === 0) {
+                container.innerHTML = '<div class="empty-state">No hay notas que coincidan con los filtros.</div>';
+                countEl.textContent = '0 notas';
+                return;
+            }
+
+            countEl.textContent = `${filteredNotes.length} nota${filteredNotes.length !== 1 ? 's' : ''}`;
 
             // Agrupar por categoría y tags
             const grouped = {};
-            notes.forEach(note => {
+            filteredNotes.forEach(note => {
                 const category = note.category || 'Other';
                 if (!grouped[category]) grouped[category] = {};
 
@@ -2761,13 +2865,43 @@
                 return;
             }
 
-            countEl.textContent = `${notes.length} nota${notes.length !== 1 ? 's' : ''}`;
+            // Aplicar filtros de asignación
+            let filteredNotes = notes;
+
+            // Filtrar por persona si está en modo asignación
+            if (assignmentMode && assignmentFilterPerson !== null) {
+                filteredNotes = filteredNotes.filter(note =>
+                    note.assignedTo && note.assignedTo.includes(assignmentFilterPerson)
+                );
+            }
+
+            // Filtrar por texto
+            if (assignmentMode && assignmentFilterText) {
+                filteredNotes = filteredNotes.filter(note =>
+                    note.text.toLowerCase().includes(assignmentFilterText) ||
+                    (note.category && note.category.toLowerCase().includes(assignmentFilterText)) ||
+                    (note.tags && note.tags.some(tag => tag.toLowerCase().includes(assignmentFilterText)))
+                );
+            }
+
+            // Filtrar por ocultar aceptados
+            if (assignmentMode && assignmentHideAccepted) {
+                filteredNotes = filteredNotes.filter(note => note.reviewStatus !== 'accepted');
+            }
+
+            if (filteredNotes.length === 0) {
+                container.innerHTML = '<div class="empty-state">No hay notas que coincidan con los filtros.</div>';
+                countEl.textContent = '0 notas';
+                return;
+            }
+
+            countEl.textContent = `${filteredNotes.length} nota${filteredNotes.length !== 1 ? 's' : ''}`;
 
             // Agrupar notas por persona
             const groupedByPerson = {};
             const unassigned = [];
 
-            notes.forEach(note => {
+            filteredNotes.forEach(note => {
                 if (note.assignedTo && note.assignedTo.length > 0) {
                     note.assignedTo.forEach(person => {
                         if (!groupedByPerson[person]) {
