@@ -48,7 +48,7 @@
 
         .terminal-section {
             flex: 1;
-            display: flex;
+            display: none; /* Ocultado */
             flex-direction: column;
             background: #0f0f1a;
             border-right: 2px solid #1a1a2e;
@@ -248,7 +248,7 @@
         }
 
         .notes-section {
-            width: 450px;
+            width: 100%; /* Pantalla completa */
             background: #0f0f1a;
             display: flex;
             flex-direction: column;
@@ -293,6 +293,23 @@
             border-bottom: 1px solid #16213e;
             display: flex;
             justify-content: space-between;
+        }
+
+        .person-group {
+            margin-bottom: 30px;
+        }
+
+        .person-group-header {
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            padding: 12px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid;
+            border-radius: 4px 4px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .tag-badge {
@@ -991,7 +1008,7 @@
 
         @media (max-width: 1024px) {
             .notes-section {
-                width: 350px;
+                width: 100%; /* Pantalla completa en todas las resoluciones */
             }
         }
 
@@ -1038,6 +1055,7 @@
                 height: 50vh;
                 min-height: 300px;
                 border-right: none;
+                display: none; /* Ocultado en mobile también */
             }
 
             .terminal-input {
@@ -1244,10 +1262,11 @@
         @media (max-width: 768px) and (orientation: landscape) {
             .terminal-section {
                 height: 40vh;
+                display: none; /* Ocultado en landscape también */
             }
 
             .notes-section {
-                min-height: 40vh;
+                min-height: 100vh; /* Pantalla completa en landscape */
             }
         }
 
@@ -1348,7 +1367,15 @@
                     <h2>📋 Notas Organizadas</h2>
                     <span class="notes-count" id="notesCount">0 notas</span>
                 </div>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                    <div style="display: flex; gap: 5px; background: #16213e; padding: 4px; border-radius: 4px;">
+                        <button class="view-toggle-btn active" id="viewByCategoryBtn" onclick="toggleView('category')" style="padding: 6px 12px; font-size: 0.8rem; border: none; border-radius: 3px; cursor: pointer; font-family: 'Courier New', monospace; transition: all 0.2s; background: #00ff88; color: #0a0a0f; font-weight: bold;">
+                            📂 Por Categoría
+                        </button>
+                        <button class="view-toggle-btn" id="viewByPersonBtn" onclick="toggleView('person')" style="padding: 6px 12px; font-size: 0.8rem; border: none; border-radius: 3px; cursor: pointer; font-family: 'Courier New', monospace; transition: all 0.2s; background: transparent; color: #888;">
+                            👥 Por Persona
+                        </button>
+                    </div>
                     <button class="history-toggle" onclick="recategorizeAndGroup()" style="padding: 6px 12px; font-size: 0.8rem;">🔄 Recategorizar y Agrupar</button>
                     <button class="delete-btn" onclick="clearAllNotes()" style="padding: 8px 16px;">🗑️ Borrar Todo</button>
                 </div>
@@ -1421,6 +1448,7 @@
         let notes = [];
         let history = [];
         let assignmentMode = false;
+        let assignmentViewMode = 'category'; // 'category' o 'person'
         let assignmentHideAccepted = false; // Ocultar tareas aceptadas en modo asignación
         let collapsedAssignments = new Set(); // IDs de notas con asignaciones colapsadas
         let reviewMode = false;
@@ -1431,6 +1459,17 @@
 
         // Lista de personas para asignar
         const people = ['VALEN', 'PABLO', 'MATI', 'LUKAKU', 'LUCASM', 'FEDEM', 'AGUS'];
+
+        // Colores para cada persona
+        const personColors = {
+            'VALEN': '#ff6b9d',
+            'PABLO': '#4ecdc4',
+            'MATI': '#ffd93d',
+            'LUKAKU': '#95e1d3',
+            'LUCASM': '#c77dff',
+            'FEDEM': '#ff9a56',
+            'AGUS': '#70e000'
+        };
 
         // Opciones de dificultad
         const difficulties = ['EASY', 'MEDIUM', 'HARD'];
@@ -1516,12 +1555,21 @@
 
             people.forEach(person => {
                 html += `
-                    <button
-                        onclick="filterByPerson('${person}')"
-                        style="padding: 4px 10px; background: ${reviewFilterPerson === person ? '#00ff88' : '#16213e'}; color: ${reviewFilterPerson === person ? '#0a0a0f' : '#00ff88'}; border: 1px solid #00ff8844; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: ${reviewFilterPerson === person ? 'bold' : 'normal'};"
-                    >
-                        ${person}
-                    </button>
+                    <div style="display: flex; gap: 3px; align-items: center;">
+                        <button
+                            onclick="filterByPerson('${person}')"
+                            style="padding: 4px 10px; background: ${reviewFilterPerson === person ? '#00ff88' : '#16213e'}; color: ${reviewFilterPerson === person ? '#0a0a0f' : '#00ff88'}; border: 1px solid #00ff8844; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: ${reviewFilterPerson === person ? 'bold' : 'normal'};"
+                        >
+                            ${person}
+                        </button>
+                        <button
+                            onclick="copyPersonLink('${person}')"
+                            style="padding: 4px 8px; background: #16213e; color: #00ff88; border: 1px solid #00ff8844; border-radius: 4px; cursor: pointer; font-size: 0.85rem;"
+                            title="Copiar link personal de ${person}"
+                        >
+                            📋
+                        </button>
+                    </div>
                 `;
             });
 
@@ -1533,6 +1581,31 @@
             reviewFilterPerson = person;
             renderPersonFilters();
             renderReviewMode();
+        }
+
+        // Copiar link personal
+        function copyPersonLink(person) {
+            const personLower = person.toLowerCase();
+            const baseUrl = window.location.origin + window.location.pathname;
+            const personalUrl = `${baseUrl}?person=${personLower}`;
+
+            navigator.clipboard.writeText(personalUrl).then(() => {
+                // Mostrar notificación de éxito
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = '✓';
+                button.style.background = '#00ff88';
+                button.style.color = '#0a0a0f';
+
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = '#16213e';
+                    button.style.color = '#00ff88';
+                }, 1500);
+            }).catch(err => {
+                console.error('Error copiando link:', err);
+                alert('Error al copiar el link');
+            });
         }
 
         // Toggle ocultar aceptados
@@ -1833,6 +1906,29 @@
         // Inicializar
         async function init() {
             await loadFromLocalStorage();
+
+            // Detectar si hay un parámetro person en la URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const personParam = urlParams.get('person');
+
+            if (personParam) {
+                // Modo personal: activar modo revisión con filtro de persona
+                const personUpper = personParam.toUpperCase();
+                if (people.includes(personUpper)) {
+                    reviewMode = true;
+                    reviewFilterPerson = personUpper;
+                    reviewGroupByPerson = true;
+
+                    // Activar el panel de revisión y ocultar el main container
+                    document.getElementById('reviewPanel').classList.add('active');
+                    document.querySelector('.main-container').classList.add('review-active');
+
+                    renderPersonFilters();
+                    renderReviewMode();
+                    return; // No continuar con la inicialización normal
+                }
+            }
+
             renderNotes();
             renderHistory();
 
@@ -1973,7 +2069,7 @@
                 ` : showAssignedWithEdit ? `
                     <div style="margin-top: 6px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                         ${note.assignedTo && note.assignedTo.length > 0 ? `
-                            ${note.assignedTo.map(person => `<span class="assigned-person">👤 ${person}</span>`).join('')}
+                            ${note.assignedTo.map(person => `<span class="assigned-person" style="${getPersonColorStyle(person)}">👤 ${person}</span>`).join('')}
                         ` : ''}
                         ${note.difficulty ? `<span class="assigned-person" style="background: #1a3a2e; border-color: #00ff8888;">📊 ${note.difficulty.toUpperCase()}</span>` : ''}
                         ${note.priority ? `<span class="assigned-person" style="background: ${getPriorityColor(note.priority)}; border-color: ${getPriorityColor(note.priority)};">⚡ <span style="color: #000; font-weight: bold;">${note.priority.toUpperCase()}</span></span>` : ''}
@@ -1982,7 +2078,7 @@
                 ` : hasAssignments ? `
                     <div style="margin-top: 6px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                         ${note.assignedTo && note.assignedTo.length > 0 ? `
-                            ${note.assignedTo.map(person => `<span class="assigned-person">👤 ${person}</span>`).join('')}
+                            ${note.assignedTo.map(person => `<span class="assigned-person" style="${getPersonColorStyle(person)}">👤 ${person}</span>`).join('')}
                         ` : ''}
                         ${note.difficulty ? `<span class="assigned-person" style="background: #1a3a2e; border-color: #00ff8888;">📊 ${note.difficulty.toUpperCase()}</span>` : ''}
                         ${note.priority ? `<span class="assigned-person" style="background: ${getPriorityColor(note.priority)}; border-color: ${getPriorityColor(note.priority)};">⚡ <span style="color: #000; font-weight: bold;">${note.priority.toUpperCase()}</span></span>` : ''}
@@ -2587,6 +2683,13 @@
 
         // Renderizar notas organizadas
         function renderNotes() {
+            // Delegar según el modo de vista
+            if (assignmentViewMode === 'person') {
+                renderNotesByPerson();
+                return;
+            }
+
+            // Vista por categoría (código original)
             const container = document.getElementById('notesList');
             const countEl = document.getElementById('notesCount');
 
@@ -2631,75 +2734,147 @@
                                         <span>${tag}</span>
                                         <span class="tag-badge">${tagNotes.length}</span>
                                     </div>
-                                    ${tagNotes.map(note => `
-                                        <div class="note-card ${note.priority ? 'priority-' + note.priority : ''}" style="position: relative;">
-                                            ${editingNoteId === note.id ? `
-                                                <input type="text"
-                                                       class="note-edit-input"
-                                                       id="edit-input-${note.id}"
-                                                       value="${escapeHtml(note.text)}"
-                                                       onkeypress="if(event.key==='Enter') saveEditNote(${note.id}, event); else if(event.key==='Escape') cancelEditNote(event);"
-                                                       autofocus>
-                                                <div class="edit-actions">
-                                                    <button class="save-btn" onclick="saveEditNote(${note.id}, event)">✓ Guardar</button>
-                                                    <button class="cancel-btn" onclick="cancelEditNote(event)">✕ Cancelar</button>
-                                                </div>
-                                            ` : `
-                                                <div class="note-card-content">
-                                                    <div class="note-card-text" onclick="startEditNote(${note.id}, event)" style="cursor: pointer;">${escapeHtml(note.text)}</div>
-                                                    <div class="note-card-badges">
-                                                        <span class="note-category-badge">${getCategoryEmoji(note.category)} ${note.category}</span>
-                                                        ${note.tags && note.tags.length > 0 ? `
-                                                            <div class="note-tags-container">
-                                                                ${note.tags.map(tag => `<span class="note-tag">${tag}</span>`).join('')}
-                                                            </div>
-                                                        ` : ''}
-                                                    </div>
-                                                </div>
-                                                ${note.assignedTo && note.assignedTo.length > 0 ? `
-                                                    <div class="assigned-people-container">
-                                                        ${note.assignedTo.map(person => `<span class="assigned-person">👤 ${person}</span>`).join('')}
-                                                    </div>
-                                                ` : ''}
-                                                <div class="note-card-meta">
-                                                    <span>${formatTime(note.timestamp)}</span>
-                                                    <div style="display: flex; gap: 5px; align-items: center;">
-                                                        <span class="work-status-badge"
-                                                              onclick="toggleWorkStatusSelector(${note.id}, event)"
-                                                              style="background: ${workStatusColors[note.workStatus || 'not_started']};">
-                                                            ${workStatusLabels[note.workStatus || 'not_started']}
-                                                        </span>
-                                                        <span class="priority-badge ${note.priority ? 'priority-' + note.priority : ''}"
-                                                              onclick="togglePrioritySelector(${note.id}, event)"
-                                                              style="${!note.priority ? 'background: #16213e; color: #888;' : ''}">
-                                                            ${note.priority ? note.priority.toUpperCase() : '⚡ Prioridad'}
-                                                        </span>
-                                                        <button class="edit-btn" onclick="startEditNote(${note.id}, event)">✎</button>
-                                                        <button class="delete-btn" onclick="deleteNote(${note.id}, event)">✕</button>
-                                                    </div>
-                                                </div>
-                                                <div class="work-status-selector" id="work-status-selector-${note.id}">
-                                                    <button class="work-status-option" style="background: ${workStatusColors.not_started};" onclick="setWorkStatus(${note.id}, 'not_started', event)">⭕ NO EMPEZADO</button>
-                                                    <button class="work-status-option" style="background: ${workStatusColors.wip};" onclick="setWorkStatus(${note.id}, 'wip', event)">🔄 WIP</button>
-                                                    <button class="work-status-option" style="background: ${workStatusColors.awaiting_review};" onclick="setWorkStatus(${note.id}, 'awaiting_review', event)">⏳ ESPERANDO REVISIÓN</button>
-                                                    <button class="work-status-option" style="background: ${workStatusColors.accepted};" onclick="setWorkStatus(${note.id}, 'accepted', event)">✅ ACEPTADO</button>
-                                                    <button class="work-status-option" style="background: ${workStatusColors.rejected};" onclick="setWorkStatus(${note.id}, 'rejected', event)">❌ RECHAZADO</button>
-                                                </div>
-                                                <div class="priority-selector" id="priority-selector-${note.id}">
-                                                    <button class="priority-option priority-critical" onclick="setPriority(${note.id}, 'critical', event)">🔴 CRÍTICA</button>
-                                                    <button class="priority-option priority-high" onclick="setPriority(${note.id}, 'high', event)">🟠 ALTA</button>
-                                                    <button class="priority-option priority-medium" onclick="setPriority(${note.id}, 'medium', event)">🟡 MEDIA</button>
-                                                    <button class="priority-option priority-low" onclick="setPriority(${note.id}, 'low', event)">🔵 BAJA</button>
-                                                </div>
-                                            `}
-                                        </div>
-                                    `).join('')}
+                                    ${tagNotes.map(note => renderNoteCard(note)).join('')}
                                 </div>
                             `).join('')}
                         </div>
                     `;
                 })
                 .join('');
+        }
+
+        // Renderizar notas agrupadas por persona
+        function renderNotesByPerson() {
+            const container = document.getElementById('notesList');
+            const countEl = document.getElementById('notesCount');
+
+            if (notes.length === 0) {
+                container.innerHTML = '<div class="empty-state">No hay notas aún.<br>Empieza a escribir!</div>';
+                countEl.textContent = '0 notas';
+                return;
+            }
+
+            countEl.textContent = `${notes.length} nota${notes.length !== 1 ? 's' : ''}`;
+
+            // Agrupar notas por persona
+            const groupedByPerson = {};
+            const unassigned = [];
+
+            notes.forEach(note => {
+                if (note.assignedTo && note.assignedTo.length > 0) {
+                    note.assignedTo.forEach(person => {
+                        if (!groupedByPerson[person]) {
+                            groupedByPerson[person] = [];
+                        }
+                        groupedByPerson[person].push(note);
+                    });
+                } else {
+                    unassigned.push(note);
+                }
+            });
+
+            // Renderizar notas por persona
+            let html = '';
+
+            // Notas asignadas por persona
+            people.forEach(person => {
+                if (groupedByPerson[person] && groupedByPerson[person].length > 0) {
+                    const personNotes = groupedByPerson[person];
+                    const personColor = personColors[person] || '#00ff88';
+
+                    html += `
+                        <div class="person-group">
+                            <div class="person-group-header" style="color: ${personColor} !important; border-color: ${personColor} !important; background: rgba(${hexToRgb(personColor)}, 0.1);">
+                                <span style="color: ${personColor} !important; font-weight: bold;">👤 ${person}</span>
+                                <span style="font-size: 0.9rem; color: #888;">(${personNotes.length})</span>
+                            </div>
+                            ${personNotes.map(note => renderNoteCard(note)).join('')}
+                        </div>
+                    `;
+                }
+            });
+
+            // Notas sin asignar
+            if (unassigned.length > 0) {
+                html += `
+                    <div class="person-group">
+                        <div class="person-group-header" style="color: #888; border-color: #444;">
+                            <span>❓ Sin Asignar</span>
+                            <span style="font-size: 0.9rem;">(${unassigned.length})</span>
+                        </div>
+                        ${unassigned.map(note => renderNoteCard(note)).join('')}
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        // Renderizar una tarjeta de nota individual (reutilizable)
+        function renderNoteCard(note) {
+            return `
+                <div class="note-card ${note.priority ? 'priority-' + note.priority : ''}" style="position: relative;">
+                    ${editingNoteId === note.id ? `
+                        <input type="text"
+                               class="note-edit-input"
+                               id="edit-input-${note.id}"
+                               value="${escapeHtml(note.text)}"
+                               onkeypress="if(event.key==='Enter') saveEditNote(${note.id}, event); else if(event.key==='Escape') cancelEditNote(event);"
+                               autofocus>
+                        <div class="edit-actions">
+                            <button class="save-btn" onclick="saveEditNote(${note.id}, event)">✓ Guardar</button>
+                            <button class="cancel-btn" onclick="cancelEditNote(event)">✕ Cancelar</button>
+                        </div>
+                    ` : `
+                        <div class="note-card-content">
+                            <div class="note-card-text" onclick="startEditNote(${note.id}, event)" style="cursor: pointer;">${escapeHtml(note.text)}</div>
+                            <div class="note-card-badges">
+                                <span class="note-category-badge">${getCategoryEmoji(note.category)} ${note.category}</span>
+                                ${note.tags && note.tags.length > 0 ? `
+                                    <div class="note-tags-container">
+                                        ${note.tags.map(tag => `<span class="note-tag">${tag}</span>`).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                        ${note.assignedTo && note.assignedTo.length > 0 ? `
+                            <div class="assigned-people-container">
+                                ${note.assignedTo.map(person => `<span class="assigned-person" style="${getPersonColorStyle(person)}">👤 ${person}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                        <div class="note-card-meta">
+                            <span>${formatTime(note.timestamp)}</span>
+                            <div style="display: flex; gap: 5px; align-items: center;">
+                                <span class="work-status-badge"
+                                      onclick="toggleWorkStatusSelector(${note.id}, event)"
+                                      style="background: ${workStatusColors[note.workStatus || 'not_started']};">
+                                    ${workStatusLabels[note.workStatus || 'not_started']}
+                                </span>
+                                <span class="priority-badge ${note.priority ? 'priority-' + note.priority : ''}"
+                                      onclick="togglePrioritySelector(${note.id}, event)"
+                                      style="${!note.priority ? 'background: #16213e; color: #888;' : ''}">
+                                    ${note.priority ? note.priority.toUpperCase() : '⚡ Prioridad'}
+                                </span>
+                                <button class="edit-btn" onclick="startEditNote(${note.id}, event)">✎</button>
+                                <button class="delete-btn" onclick="deleteNote(${note.id}, event)">✕</button>
+                            </div>
+                        </div>
+                        <div class="work-status-selector" id="work-status-selector-${note.id}">
+                            <button class="work-status-option" style="background: ${workStatusColors.not_started};" onclick="setWorkStatus(${note.id}, 'not_started', event)">⭕ NO EMPEZADO</button>
+                            <button class="work-status-option" style="background: ${workStatusColors.wip};" onclick="setWorkStatus(${note.id}, 'wip', event)">🔄 WIP</button>
+                            <button class="work-status-option" style="background: ${workStatusColors.awaiting_review};" onclick="setWorkStatus(${note.id}, 'awaiting_review', event)">⏳ ESPERANDO REVISIÓN</button>
+                            <button class="work-status-option" style="background: ${workStatusColors.accepted};" onclick="setWorkStatus(${note.id}, 'accepted', event)">✅ ACEPTADO</button>
+                            <button class="work-status-option" style="background: ${workStatusColors.rejected};" onclick="setWorkStatus(${note.id}, 'rejected', event)">❌ RECHAZADO</button>
+                        </div>
+                        <div class="priority-selector" id="priority-selector-${note.id}">
+                            <button class="priority-option priority-critical" onclick="setPriority(${note.id}, 'critical', event)">🔴 CRÍTICA</button>
+                            <button class="priority-option priority-high" onclick="setPriority(${note.id}, 'high', event)">🟠 ALTA</button>
+                            <button class="priority-option priority-medium" onclick="setPriority(${note.id}, 'medium', event)">🟡 MEDIA</button>
+                            <button class="priority-option priority-low" onclick="setPriority(${note.id}, 'low', event)">🔵 BAJA</button>
+                        </div>
+                    `}
+                </div>
+            `;
         }
 
         // Agregar al historial
@@ -2738,6 +2913,33 @@
         // Toggle historial
         function toggleHistory() {
             document.getElementById('historyPanel').classList.toggle('active');
+        }
+
+        // Toggle entre vista por categoría y por persona
+        function toggleView(mode) {
+            assignmentViewMode = mode;
+
+            // Actualizar botones
+            const categoryBtn = document.getElementById('viewByCategoryBtn');
+            const personBtn = document.getElementById('viewByPersonBtn');
+
+            if (mode === 'category') {
+                categoryBtn.style.background = '#00ff88';
+                categoryBtn.style.color = '#0a0a0f';
+                categoryBtn.style.fontWeight = 'bold';
+                personBtn.style.background = 'transparent';
+                personBtn.style.color = '#888';
+                personBtn.style.fontWeight = 'normal';
+            } else {
+                personBtn.style.background = '#00ff88';
+                personBtn.style.color = '#0a0a0f';
+                personBtn.style.fontWeight = 'bold';
+                categoryBtn.style.background = 'transparent';
+                categoryBtn.style.color = '#888';
+                categoryBtn.style.fontWeight = 'normal';
+            }
+
+            renderNotes();
         }
 
         // Exportar notas
@@ -3091,6 +3293,16 @@
         function formatTime(timestamp) {
             const date = new Date(timestamp);
             return date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '0, 255, 136';
+        }
+
+        function getPersonColorStyle(person) {
+            const color = personColors[person] || '#ff88ff';
+            return `background: ${color}; color: #000; border-color: ${color}; font-weight: bold;`;
         }
 
         function getCategoryEmoji(category) {

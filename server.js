@@ -4,12 +4,12 @@ const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
+const url = require('url');
 const { Pool } = require('pg');
 
 const PORT = process.env.PORT || 3000;
 const API_KEY = process.env.ANTHROPIC_API_KEY;
 const DATABASE_URL = process.env.DATABASE_URL;
-const NOTES_FILE = path.join(__dirname, 'notes.json');
 
 if (!API_KEY || API_KEY === 'YOUR_API_KEY_HERE') {
     console.error('❌ ERROR: ANTHROPIC_API_KEY no está configurada');
@@ -18,31 +18,25 @@ if (!API_KEY || API_KEY === 'YOUR_API_KEY_HERE') {
     process.exit(1);
 }
 
-// Configurar PostgreSQL o fallback a archivo
-let pool = null;
-let useDatabase = false;
-
-if (DATABASE_URL) {
-    // Usar PostgreSQL en producción
-    pool = new Pool({
-        connectionString: DATABASE_URL,
-        ssl: {
-            rejectUnauthorized: false
-        }
-    });
-    useDatabase = true;
-    console.log('✅ Usando PostgreSQL para almacenamiento');
-
-    // Inicializar tabla
-    initDatabase();
-} else {
-    // Usar archivo en desarrollo local
-    console.log('⚠️  DATABASE_URL no encontrada, usando notes.json');
-    if (!fs.existsSync(NOTES_FILE)) {
-        fs.writeFileSync(NOTES_FILE, JSON.stringify({ notes: [], history: [] }, null, 2));
-        console.log('✅ Archivo notes.json creado');
-    }
+if (!DATABASE_URL) {
+    console.error('❌ ERROR: DATABASE_URL no está configurada');
+    console.error('Por favor configura DATABASE_URL en el archivo .env');
+    console.error('Ejemplo: DATABASE_URL=postgresql://postgres:PASSWORD@db.rhzfstnkavzqvcymavua.supabase.co:5432/postgres');
+    process.exit(1);
 }
+
+// Configurar PostgreSQL (SIEMPRE usar base de datos)
+const pool = new Pool({
+    connectionString: DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
+    }
+});
+
+console.log('✅ Usando PostgreSQL para almacenamiento');
+
+// Inicializar tabla
+initDatabase();
 
 // Inicializar base de datos
 async function initDatabase() {
@@ -74,41 +68,29 @@ async function initDatabase() {
 
 // Cargar notas
 async function loadNotes() {
-    if (useDatabase) {
-        try {
-            const result = await pool.query('SELECT data FROM app_data WHERE id = 1');
-            if (result.rows.length > 0) {
-                return result.rows[0].data;
-            }
-            return { notes: [], history: [] };
-        } catch (error) {
-            console.error('❌ Error cargando de PostgreSQL:', error);
-            throw error;
+    try {
+        const result = await pool.query('SELECT data FROM app_data WHERE id = 1');
+        if (result.rows.length > 0) {
+            return result.rows[0].data;
         }
-    } else {
-        // Leer de archivo
-        const data = fs.readFileSync(NOTES_FILE, 'utf8');
-        return JSON.parse(data);
+        return { notes: [], history: [] };
+    } catch (error) {
+        console.error('❌ Error cargando de PostgreSQL:', error);
+        throw error;
     }
 }
 
 // Guardar notas
 async function saveNotes(data) {
-    if (useDatabase) {
-        try {
-            await pool.query(
-                'UPDATE app_data SET data = $1, updated_at = CURRENT_TIMESTAMP WHERE id = 1',
-                [JSON.stringify(data)]
-            );
-            console.log('✅ Notas guardadas en PostgreSQL:', data.notes.length, 'notas');
-        } catch (error) {
-            console.error('❌ Error guardando en PostgreSQL:', error);
-            throw error;
-        }
-    } else {
-        // Guardar en archivo
-        fs.writeFileSync(NOTES_FILE, JSON.stringify(data, null, 2));
-        console.log('✅ Notas guardadas en archivo:', data.notes.length, 'notas');
+    try {
+        await pool.query(
+            'UPDATE app_data SET data = $1, updated_at = CURRENT_TIMESTAMP WHERE id = 1',
+            [JSON.stringify(data)]
+        );
+        console.log('✅ Notas guardadas en PostgreSQL:', data.notes.length, 'notas');
+    } catch (error) {
+        console.error('❌ Error guardando en PostgreSQL:', error);
+        throw error;
     }
 }
 
@@ -244,7 +226,10 @@ Responde SOLO con el JSON, nada más.`
     }
 
     // Servir el archivo HTML principal
-    if (req.url === '/' || req.url === '/index.html') {
+    const parsedUrl = url.parse(req.url);
+    const pathname = parsedUrl.pathname;
+
+    if (pathname === '/' || pathname === '/index.html') {
         fs.readFile(path.join(__dirname, 'index.html'), (err, data) => {
             if (err) {
                 res.writeHead(500);
