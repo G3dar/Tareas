@@ -1844,9 +1844,10 @@
                 }
             });
 
-            // Mantener focus en el input
+            // Mantener focus en el input (solo si no hay selección de texto)
             document.addEventListener('click', (e) => {
-                if (!e.target.closest('.note-card') && !e.target.closest('.history-panel') && !e.target.closest('.delete-btn')) {
+                const hasSelection = window.getSelection().toString().length > 0;
+                if (!hasSelection && !e.target.closest('.note-card') && !e.target.closest('.history-panel') && !e.target.closest('.delete-btn')) {
                     input.focus();
                 }
             });
@@ -2463,8 +2464,11 @@
         function selectDifficulty(noteId, difficulty, event) {
             event.stopPropagation();
 
+            // Escapar el noteId para selectores CSS
+            const escapedId = CSS.escape(String(noteId));
+
             // Desmarcar todos los radio buttons de dificultad
-            const allRadios = document.querySelectorAll(`input[name="difficulty-${noteId}"]`);
+            const allRadios = document.querySelectorAll(`input[name="difficulty-${escapedId}"]`);
             allRadios.forEach(radio => {
                 radio.checked = false;
                 radio.closest('.person-checkbox').classList.remove('selected');
@@ -2480,8 +2484,11 @@
         function selectPriority(noteId, priority, event) {
             event.stopPropagation();
 
+            // Escapar el noteId para selectores CSS
+            const escapedId = CSS.escape(String(noteId));
+
             // Desmarcar todos los radio buttons de prioridad
-            const allRadios = document.querySelectorAll(`input[name="priority-${noteId}"]`);
+            const allRadios = document.querySelectorAll(`input[name="priority-${escapedId}"]`);
             allRadios.forEach(radio => {
                 radio.checked = false;
                 radio.closest('.person-checkbox').classList.remove('selected');
@@ -2508,16 +2515,19 @@
         function assignPeople(noteId, event) {
             event.stopPropagation();
 
+            // Escapar el noteId para selectores CSS (maneja puntos y caracteres especiales)
+            const escapedId = CSS.escape(String(noteId));
+
             // Obtener personas seleccionadas
-            const checkboxes = document.querySelectorAll(`#assignment-terminal-${noteId} input[type="checkbox"]:checked`);
+            const checkboxes = document.querySelectorAll(`#assignment-terminal-${escapedId} input[type="checkbox"]:checked`);
             const selectedPeople = Array.from(checkboxes).map(cb => cb.value);
 
             // Obtener dificultad seleccionada
-            const difficultyRadio = document.querySelector(`input[name="difficulty-${noteId}"]:checked`);
+            const difficultyRadio = document.querySelector(`input[name="difficulty-${escapedId}"]:checked`);
             const selectedDifficulty = difficultyRadio ? difficultyRadio.value : null;
 
             // Obtener prioridad seleccionada
-            const priorityRadio = document.querySelector(`input[name="priority-${noteId}"]:checked`);
+            const priorityRadio = document.querySelector(`input[name="priority-${escapedId}"]:checked`);
             const selectedPriority = priorityRadio ? priorityRadio.value : null;
 
             const noteIndex = notes.findIndex(n => n.id === noteId);
