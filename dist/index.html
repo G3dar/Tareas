@@ -1338,7 +1338,7 @@
         <h1>🥚 Eggscape Build Notes</h1>
         <div style="display: flex; gap: 15px; align-items: center;">
             <div class="date">2025-10-13</div>
-            <button class="assignment-mode-toggle active" id="buildReviewModeBtn" onclick="toggleBuildReviewMode()" style="background: #1a3a2e; color: #00ff88; border-color: #00ff8844;">
+            <button class="assignment-mode-toggle" id="buildReviewModeBtn" onclick="toggleBuildReviewMode()" style="background: #1a3a2e; color: #00ff88; border-color: #00ff8844;">
                 📝 BUILD REVIEW
             </button>
             <button class="assignment-mode-toggle" id="assignmentModeBtn" onclick="toggleAssignmentMode()">
@@ -1423,7 +1423,7 @@
     </div>
 
     <!-- Panel de BUILD REVIEW -->
-    <div class="review-panel active" id="buildReviewPanel">
+    <div class="review-panel" id="buildReviewPanel">
         <div class="review-header">
             <h3>📝 Build Review</h3>
             <div class="review-controls">
@@ -1511,7 +1511,7 @@
         // Estado de la aplicación
         let notes = [];
         let history = [];
-        let buildReviewMode = true; // Modo BUILD REVIEW activo por default
+        let buildReviewMode = false; // Modo BUILD REVIEW
         let buildReviewSelectedDay = 'all'; // 'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun', 'all'
         let buildReviewHideAccepted = false; // Ocultar tareas aceptadas en build review
         let assignmentMode = false;
@@ -1782,6 +1782,15 @@
                 btn.classList.add('active');
                 panel.classList.add('active');
                 mainContainer.classList.add('review-active');
+
+                // Marcar el botón del día actual como activo si ninguno está activo
+                const activeDayBtn = document.querySelector('.day-filter-btn.active');
+                if (!activeDayBtn) {
+                    // Marcar "TODOS" por defecto
+                    const allBtn = document.getElementById('dayBtn-all');
+                    if (allBtn) allBtn.classList.add('active');
+                }
+
                 renderBuildReview();
             } else {
                 btn.classList.remove('active');
@@ -2303,13 +2312,7 @@
                 }
             }
 
-            // BUILD REVIEW es el modo default
-            // Marcar el botón "TODOS" como activo
-            const allBtn = document.getElementById('dayBtn-all');
-            if (allBtn) allBtn.classList.add('active');
-
-            // Renderizar BUILD REVIEW
-            renderBuildReview();
+            // Vista de notas organizadas es el modo default
             renderNotes();
             renderHistory();
 
