@@ -2946,12 +2946,12 @@
                     notesToRender = notesToRender.filter(note => note.reviewStatus !== 'accepted');
                 }
 
-                // Ordenar: sin asignar primero
+                // Ordenar: sin personas asignadas primero
                 notesToRender = [...notesToRender].sort((a, b) => {
-                    const aHasAssignments = (a.assignedTo && a.assignedTo.length > 0) || a.difficulty || a.priority;
-                    const bHasAssignments = (b.assignedTo && b.assignedTo.length > 0) || b.difficulty || b.priority;
-                    if (!aHasAssignments && bHasAssignments) return -1;
-                    if (aHasAssignments && !bHasAssignments) return 1;
+                    const aHasPeople = a.assignedTo && a.assignedTo.length > 0;
+                    const bHasPeople = b.assignedTo && b.assignedTo.length > 0;
+                    if (!aHasPeople && bHasPeople) return -1;
+                    if (aHasPeople && !bHasPeople) return 1;
                     return 0;
                 });
             }
@@ -3010,12 +3010,12 @@
                     notesToRender = notesToRender.filter(note => note.reviewStatus !== 'accepted');
                 }
 
-                // Ordenar: sin asignar primero
+                // Ordenar: sin personas asignadas primero
                 notesToRender = [...notesToRender].sort((a, b) => {
-                    const aHasAssignments = (a.assignedTo && a.assignedTo.length > 0) || a.difficulty || a.priority;
-                    const bHasAssignments = (b.assignedTo && b.assignedTo.length > 0) || b.difficulty || b.priority;
-                    if (!aHasAssignments && bHasAssignments) return -1;
-                    if (aHasAssignments && !bHasAssignments) return 1;
+                    const aHasPeople = a.assignedTo && a.assignedTo.length > 0;
+                    const bHasPeople = b.assignedTo && b.assignedTo.length > 0;
+                    if (!aHasPeople && bHasPeople) return -1;
+                    if (aHasPeople && !bHasPeople) return 1;
                     return 0;
                 });
 
