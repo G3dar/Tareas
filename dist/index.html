@@ -3189,6 +3189,71 @@
             }
         }
 
+        // Funciones para asignación en tarjetas (note cards)
+        function togglePersonInCard(noteId, person, event) {
+            event.stopPropagation();
+            const noteIndex = notes.findIndex(n => n.id === noteId);
+            if (noteIndex !== -1) {
+                if (!notes[noteIndex].assignedTo) notes[noteIndex].assignedTo = [];
+                const index = notes[noteIndex].assignedTo.indexOf(person);
+                if (index > -1) {
+                    notes[noteIndex].assignedTo.splice(index, 1);
+                } else {
+                    notes[noteIndex].assignedTo.push(person);
+                }
+                renderNotes(); // Re-renderizar para actualizar checkboxes
+            }
+        }
+
+        function selectDifficultyInCard(noteId, difficulty, event) {
+            event.stopPropagation();
+            const noteIndex = notes.findIndex(n => n.id === noteId);
+            if (noteIndex !== -1) {
+                notes[noteIndex].difficulty = difficulty;
+                renderNotes(); // Re-renderizar para actualizar selección
+            }
+        }
+
+        function selectPriorityInCard(noteId, priority, event) {
+            event.stopPropagation();
+            const noteIndex = notes.findIndex(n => n.id === noteId);
+            if (noteIndex !== -1) {
+                notes[noteIndex].priority = priority;
+                renderNotes(); // Re-renderizar para actualizar selección
+            }
+        }
+
+        function saveAssignmentInCard(noteId, event) {
+            event.stopPropagation();
+            const noteIndex = notes.findIndex(n => n.id === noteId);
+            if (noteIndex !== -1) {
+                saveToLocalStorage();
+
+                // Log en historial
+                const details = [];
+                if (notes[noteIndex].assignedTo && notes[noteIndex].assignedTo.length > 0) {
+                    details.push(`👥 ${notes[noteIndex].assignedTo.join(', ')}`);
+                }
+                if (notes[noteIndex].difficulty) details.push(`📊 ${notes[noteIndex].difficulty.toUpperCase()}`);
+                if (notes[noteIndex].priority) details.push(`⚡ ${notes[noteIndex].priority.toUpperCase()}`);
+
+                const detailsStr = details.length > 0 ? details.join(' | ') : 'sin asignaciones';
+                addToHistory('assign', `Asignada "${notes[noteIndex].text}" → ${detailsStr}`);
+
+                // Remover del modo de edición
+                editingAssignments.delete(noteId);
+
+                renderNotes();
+            }
+        }
+
+        function editAssignmentInCard(noteId, event) {
+            event.stopPropagation();
+            // Agregar a editingAssignments para mostrar la UI de asignación
+            editingAssignments.add(noteId);
+            renderNotes();
+        }
+
         // Renderizar notas organizadas
         function renderNotes() {
             // Delegar según el modo de vista
@@ -3459,6 +3524,9 @@
 
         // Renderizar una tarjeta de nota individual (reutilizable)
         function renderNoteCard(note) {
+            const hasAssignment = note.assignedTo && note.assignedTo.length > 0;
+            const showAssignmentUI = assignmentMode && (!hasAssignment || editingAssignments.has(note.id));
+
             return `
                 <div class="note-card ${note.priority ? 'priority-' + note.priority : ''}" style="position: relative;">
                     ${editingNoteId === note.id ? `
@@ -3484,9 +3552,65 @@
                                 ` : ''}
                             </div>
                         </div>
-                        ${note.assignedTo && note.assignedTo.length > 0 ? `
-                            <div class="assigned-people-container">
+
+                        ${showAssignmentUI ? `
+                            <div class="assignment-section" style="margin-top: 12px; padding: 12px; background: #16213e; border-radius: 6px;">
+                                <div style="margin-bottom: 10px;">
+                                    <div style="color: #888; font-size: 0.75rem; margin-bottom: 6px; font-weight: bold;">👥 ASIGNAR A:</div>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                                        ${people.map(person => `
+                                            <label class="person-checkbox ${note.assignedTo && note.assignedTo.includes(person) ? 'selected' : ''}"
+                                                   style="padding: 6px 12px; cursor: pointer;"
+                                                   onclick="togglePersonInCard(${note.id}, '${person}', event)">
+                                                <input type="checkbox"
+                                                       value="${person}"
+                                                       ${note.assignedTo && note.assignedTo.includes(person) ? 'checked' : ''}
+                                                       style="margin-right: 4px;">
+                                                ${person}
+                                            </label>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <div style="color: #888; font-size: 0.75rem; margin-bottom: 6px; font-weight: bold;">📊 DIFICULTAD:</div>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                                        ${difficulties.map(diff => `
+                                            <label class="person-checkbox ${note.difficulty === diff.toLowerCase() ? 'selected' : ''}"
+                                                   style="padding: 6px 12px; cursor: pointer;"
+                                                   onclick="selectDifficultyInCard(${note.id}, '${diff.toLowerCase()}', event)">
+                                                <input type="radio"
+                                                       name="difficulty-card-${note.id}"
+                                                       value="${diff.toLowerCase()}"
+                                                       ${note.difficulty === diff.toLowerCase() ? 'checked' : ''}
+                                                       style="margin-right: 4px;">
+                                                ${diff}
+                                            </label>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <div style="color: #888; font-size: 0.75rem; margin-bottom: 6px; font-weight: bold;">⚡ PRIORIDAD:</div>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                                        ${priorities.map(prio => `
+                                            <label class="person-checkbox ${note.priority === prio.toLowerCase() ? 'selected' : ''}"
+                                                   style="padding: 6px 12px; cursor: pointer;"
+                                                   onclick="selectPriorityInCard(${note.id}, '${prio.toLowerCase()}', event)">
+                                                <input type="radio"
+                                                       name="priority-card-${note.id}"
+                                                       value="${prio.toLowerCase()}"
+                                                       ${note.priority === prio.toLowerCase() ? 'checked' : ''}
+                                                       style="margin-right: 4px;">
+                                                ${prio}
+                                            </label>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                                <button class="save-btn" onclick="saveAssignmentInCard(${note.id}, event)" style="width: 100%;">✓ Guardar Asignación</button>
+                            </div>
+                        ` : note.assignedTo && note.assignedTo.length > 0 ? `
+                            <div class="assigned-people-container" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                                 ${note.assignedTo.map(person => `<span class="assigned-person" style="${getPersonColorStyle(person)}">👤 ${person}</span>`).join('')}
+                                ${assignmentMode ? `<button class="edit-btn" onclick="editAssignmentInCard(${note.id}, event)" style="padding: 4px 8px; font-size: 0.8rem;">✎ Editar</button>` : ''}
                             </div>
                         ` : ''}
                         <div class="note-card-meta">
