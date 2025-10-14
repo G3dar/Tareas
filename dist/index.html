@@ -3621,7 +3621,12 @@
                                         `).join('')}
                                     </div>
                                 </div>
-                                <button class="save-btn" onclick="saveAssignmentInCard(${note.id}, event)" style="width: 100%;">✓ Guardar Asignación</button>
+                                <button class="save-btn" onclick="saveAssignmentInCard(${note.id}, event)"
+                                        style="width: 100%; padding: 12px; font-size: 1rem; font-weight: bold;
+                                               background: #00ff88; color: #0a0a0f; border: none; border-radius: 6px;
+                                               cursor: pointer; margin-top: 8px; box-shadow: 0 2px 8px rgba(0, 255, 136, 0.3);">
+                                    ✓ GUARDAR ASIGNACIÓN
+                                </button>
                             </div>
                         ` : note.assignedTo && note.assignedTo.length > 0 ? `
                             <div class="assigned-people-container" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
