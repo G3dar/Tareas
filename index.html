@@ -2689,6 +2689,11 @@
 
                     saveToLocalStorage();
                     renderNotes();
+
+                    // Actualizar BUILD REVIEW si está activo
+                    if (buildReviewMode) {
+                        renderBuildReview();
+                    }
                 }
 
             } catch (error) {
@@ -2704,6 +2709,11 @@
                 if (noteIndex !== -1) {
                     notes[noteIndex].aiProcessed = true;
                     saveToLocalStorage();
+
+                    // Actualizar BUILD REVIEW si está activo
+                    if (buildReviewMode) {
+                        renderBuildReview();
+                    }
                 }
             }
         }
