@@ -247,6 +247,32 @@
             box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
         }
 
+        #buildReviewInput {
+            flex: 1;
+            background: #000000;
+            border: 2px solid #00ff88;
+            color: #00ff88;
+            padding: 18px 24px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.2rem;
+            font-weight: 500;
+            border-radius: 8px;
+            width: 100%;
+            letter-spacing: 0.5px;
+        }
+
+        #buildReviewInput:focus {
+            outline: none;
+            border-color: #00ff88;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
+            background: #0a0a0a;
+        }
+
+        #buildReviewInput::placeholder {
+            color: #00ff8866;
+            font-style: italic;
+        }
+
         .notes-section {
             width: 100%; /* Pantalla completa */
             background: #0f0f1a;
