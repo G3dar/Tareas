@@ -2439,6 +2439,7 @@
 
             // Guardar en servidor
             try {
+                console.log('💾 Intentando guardar en servidor...', notes.length, 'notas');
                 const response = await fetch('/api/notes', {
                     method: 'POST',
                     headers: {
@@ -2451,11 +2452,35 @@
                 });
 
                 if (!response.ok) {
-                    console.error('⚠️ Error guardando en servidor');
+                    const errorText = await response.text();
+                    console.error('❌ Error guardando en servidor:', response.status, errorText);
+                    showNotification('⚠️ Error guardando en servidor PostgreSQL. Datos guardados solo localmente.', 'error');
+                } else {
+                    console.log('✅ Guardado exitoso en servidor PostgreSQL');
                 }
             } catch (error) {
-                console.error('⚠️ Error guardando en servidor:', error);
+                console.error('❌ Error de red guardando en servidor:', error);
+                showNotification('⚠️ Error de conexión con servidor. Datos guardados solo localmente.', 'error');
             }
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'error' ? '#ff4444' : '#00ff88'};
+                color: ${type === 'error' ? '#fff' : '#000'};
+                padding: 15px 20px;
+                border-radius: 5px;
+                font-family: 'Courier New', monospace;
+                z-index: 10000;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 5000);
         }
 
         async function loadFromLocalStorage() {
