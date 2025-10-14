@@ -1012,6 +1012,7 @@
             }
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <div class="header">
@@ -1104,6 +1105,12 @@
     </div>
 
     <script>
+        // Inicializar Supabase
+        const SUPABASE_URL = 'https://rhzfstnkavzqvcymavua.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJoemZzdG5rYXZ6cXZjeW1hdnVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyMTQxMjgsImV4cCI6MjA3NTc5MDEyOH0.K6QTSU7uTvxPUIqSLS5_TI6bzmqV1hYswOpHyjLZcio';
+        const { createClient } = window.supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
         // Estado de la aplicación
         let notes = [];
         let history = [];
@@ -1612,14 +1619,18 @@
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-                const response = await fetch('/api/categorize', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ text: note.text }),
-                    signal: controller.signal
-                });
+                // TODO: Migrar a Supabase Edge Function
+                // const response = await fetch('/api/categorize', {
+                //     method: 'POST',
+                //     headers: {
+                //         'Content-Type': 'application/json'
+                //     },
+                //     body: JSON.stringify({ text: note.text }),
+                //     signal: controller.signal
+                // });
+
+                // Por ahora: categorización manual (temporal)
+                throw new Error('AI categorization temporalmente deshabilitada - usa categoría manual');
 
                 clearTimeout(timeoutId);
 
@@ -2437,30 +2448,27 @@
             localStorage.setItem('eggscape_notes', JSON.stringify(notes));
             localStorage.setItem('eggscape_history', JSON.stringify(history));
 
-            // Guardar en servidor
+            // Guardar en Supabase
             try {
-                console.log('💾 Intentando guardar en servidor...', notes.length, 'notas');
-                const response = await fetch('/api/notes', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        notes: notes,
-                        history: history
-                    })
-                });
+                console.log('💾 Intentando guardar en Supabase...', notes.length, 'notas');
 
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('❌ Error guardando en servidor:', response.status, errorText);
-                    showNotification('⚠️ Error guardando en servidor PostgreSQL. Datos guardados solo localmente.', 'error');
+                const { data, error } = await supabaseClient
+                    .from('app_data')
+                    .update({
+                        data: { notes, history },
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', 1);
+
+                if (error) {
+                    console.error('❌ Error guardando en Supabase:', error);
+                    showNotification('⚠️ Error guardando en Supabase. Datos guardados solo localmente.', 'error');
                 } else {
-                    console.log('✅ Guardado exitoso en servidor PostgreSQL');
+                    console.log('✅ Guardado exitoso en Supabase');
                 }
             } catch (error) {
-                console.error('❌ Error de red guardando en servidor:', error);
-                showNotification('⚠️ Error de conexión con servidor. Datos guardados solo localmente.', 'error');
+                console.error('❌ Error de red guardando en Supabase:', error);
+                showNotification('⚠️ Error de conexión con Supabase. Datos guardados solo localmente.', 'error');
             }
         }
 
@@ -2485,24 +2493,31 @@
 
         async function loadFromLocalStorage() {
             try {
-                // Cargar desde servidor
-                const response = await fetch('/api/notes');
-                if (response.ok) {
-                    const data = await response.json();
-                    notes = data.notes || [];
-                    history = data.history || [];
-                    console.log('✅ Notas cargadas desde servidor:', notes.length);
-                } else {
+                // Cargar desde Supabase
+                console.log('📥 Cargando datos desde Supabase...');
+
+                const { data, error } = await supabaseClient
+                    .from('app_data')
+                    .select('data')
+                    .eq('id', 1)
+                    .single();
+
+                if (error) {
+                    console.error('❌ Error cargando desde Supabase:', error);
                     // Fallback a localStorage
                     console.log('⚠️ Usando localStorage como fallback');
                     const savedNotes = localStorage.getItem('eggscape_notes');
                     const savedHistory = localStorage.getItem('eggscape_history');
                     if (savedNotes) notes = JSON.parse(savedNotes);
                     if (savedHistory) history = JSON.parse(savedHistory);
+                } else {
+                    notes = data.data.notes || [];
+                    history = data.data.history || [];
+                    console.log('✅ Notas cargadas desde Supabase:', notes.length);
                 }
             } catch (error) {
                 // Fallback a localStorage
-                console.error('⚠️ Error cargando desde servidor, usando localStorage:', error);
+                console.error('⚠️ Error cargando desde Supabase, usando localStorage:', error);
                 const savedNotes = localStorage.getItem('eggscape_notes');
                 const savedHistory = localStorage.getItem('eggscape_history');
                 if (savedNotes) notes = JSON.parse(savedNotes);
