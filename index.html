@@ -1313,6 +1313,17 @@
 
     <div class="main-container">
         <div class="terminal-section">
+            <div id="assignmentFilterBar" style="display: none; padding: 10px 15px; background: #0f0f1a; border-bottom: 1px solid #1a1a2e;">
+                <label style="display: flex; align-items: center; gap: 8px; color: #00ff88; font-size: 0.9rem; cursor: pointer;">
+                    <input
+                        type="checkbox"
+                        id="assignmentHideAcceptedCheckbox"
+                        onchange="toggleAssignmentHideAccepted()"
+                        style="cursor: pointer;"
+                    >
+                    Ocultar aceptados
+                </label>
+            </div>
             <div class="terminal-output" id="terminalOutput">
                 <div style="color: #00ff88; margin-bottom: 20px; font-size: 1.1rem;">
                     💬 Escribe tus notas y presiona Enter. La AI las organizará automáticamente.
@@ -1410,6 +1421,7 @@
         let notes = [];
         let history = [];
         let assignmentMode = false;
+        let assignmentHideAccepted = false; // Ocultar tareas aceptadas en modo asignación
         let collapsedAssignments = new Set(); // IDs de notas con asignaciones colapsadas
         let reviewMode = false;
         let reviewGroupByPerson = true; // true = por persona, false = por categoría/tags
@@ -1710,10 +1722,10 @@
                 });
             }
             if (note.difficulty) {
-                html += `<span class="review-meta-badge" style="background: #1a3a2e;">📊 <span style="color: #000; font-weight: bold;">${note.difficulty.toUpperCase()}</span></span>`;
+                html += `<span class="review-meta-badge" style="background: #1a3a2e;">📊 ${note.difficulty.toUpperCase()}</span>`;
             }
             if (note.priority) {
-                html += `<span class="review-meta-badge" style="background: ${getPriorityColor(note.priority)};">⚡ ${note.priority.toUpperCase()}</span>`;
+                html += `<span class="review-meta-badge" style="background: ${getPriorityColor(note.priority)};">⚡ <span style="color: #000; font-weight: bold;">${note.priority.toUpperCase()}</span></span>`;
             }
             html += `<span class="work-status-badge" onclick="toggleWorkStatusSelector(${note.id}, event)" style="background: ${workStatusColors[note.workStatus || 'not_started']};">${workStatusLabels[note.workStatus || 'not_started']}</span>`;
             html += `</div>`;
@@ -1962,8 +1974,8 @@
                         ${note.assignedTo && note.assignedTo.length > 0 ? `
                             ${note.assignedTo.map(person => `<span class="assigned-person">👤 ${person}</span>`).join('')}
                         ` : ''}
-                        ${note.difficulty ? `<span class="assigned-person" style="background: #1a3a2e; border-color: #00ff8888;">📊 <span style="color: #000; font-weight: bold;">${note.difficulty.toUpperCase()}</span></span>` : ''}
-                        ${note.priority ? `<span class="assigned-person" style="background: ${getPriorityColor(note.priority)}; border-color: ${getPriorityColor(note.priority)};">⚡ ${note.priority.toUpperCase()}</span>` : ''}
+                        ${note.difficulty ? `<span class="assigned-person" style="background: #1a3a2e; border-color: #00ff8888;">📊 ${note.difficulty.toUpperCase()}</span>` : ''}
+                        ${note.priority ? `<span class="assigned-person" style="background: ${getPriorityColor(note.priority)}; border-color: ${getPriorityColor(note.priority)};">⚡ <span style="color: #000; font-weight: bold;">${note.priority.toUpperCase()}</span></span>` : ''}
                         <button class="edit-btn" onclick="enableAssignmentEdit(${noteId}, event)" style="margin-left: 4px; padding: 4px 8px; font-size: 0.8rem;" title="Editar asignación">✎</button>
                     </div>
                 ` : hasAssignments ? `
@@ -1971,8 +1983,8 @@
                         ${note.assignedTo && note.assignedTo.length > 0 ? `
                             ${note.assignedTo.map(person => `<span class="assigned-person">👤 ${person}</span>`).join('')}
                         ` : ''}
-                        ${note.difficulty ? `<span class="assigned-person" style="background: #1a3a2e; border-color: #00ff8888;">📊 <span style="color: #000; font-weight: bold;">${note.difficulty.toUpperCase()}</span></span>` : ''}
-                        ${note.priority ? `<span class="assigned-person" style="background: ${getPriorityColor(note.priority)}; border-color: ${getPriorityColor(note.priority)};">⚡ ${note.priority.toUpperCase()}</span>` : ''}
+                        ${note.difficulty ? `<span class="assigned-person" style="background: #1a3a2e; border-color: #00ff8888;">📊 ${note.difficulty.toUpperCase()}</span>` : ''}
+                        ${note.priority ? `<span class="assigned-person" style="background: ${getPriorityColor(note.priority)}; border-color: ${getPriorityColor(note.priority)};">⚡ <span style="color: #000; font-weight: bold;">${note.priority.toUpperCase()}</span></span>` : ''}
                     </div>
                 ` : ''}
             `;
@@ -2308,20 +2320,62 @@
         function toggleAssignmentMode() {
             assignmentMode = !assignmentMode;
             const btn = document.getElementById('assignmentModeBtn');
+            const filterBar = document.getElementById('assignmentFilterBar');
+
             if (assignmentMode) {
                 btn.classList.add('active');
+                if (filterBar) filterBar.style.display = 'block';
                 // Al entrar en modo asignación, NO limpiar las colapsadas
                 // Las tareas ya asignadas se muestran con icono de editar
             } else {
                 btn.classList.remove('active');
+                if (filterBar) filterBar.style.display = 'none';
                 // Al salir del modo, limpiar las colapsadas
                 collapsedAssignments.clear();
             }
 
             // Re-renderizar todas las líneas del terminal
+            // En modo asignación, ordenar para mostrar sin asignar primero y filtrar aceptados
+            let notesToRender = notes;
+
+            if (assignmentMode) {
+                // Filtrar aceptados si el checkbox está marcado
+                if (assignmentHideAccepted) {
+                    notesToRender = notesToRender.filter(note => note.reviewStatus !== 'accepted');
+                }
+
+                // Ordenar: sin asignar primero
+                notesToRender = [...notesToRender].sort((a, b) => {
+                    const aHasAssignments = (a.assignedTo && a.assignedTo.length > 0) || a.difficulty || a.priority;
+                    const bHasAssignments = (b.assignedTo && b.assignedTo.length > 0) || b.difficulty || b.priority;
+                    if (!aHasAssignments && bHasAssignments) return -1;
+                    if (aHasAssignments && !bHasAssignments) return 1;
+                    return 0;
+                });
+            }
+
+            // Re-ordenar elementos en el DOM y ocultar los que no están en la lista filtrada
+            const terminalOutput = document.getElementById('terminalOutput');
+            const notesToRenderIds = new Set(notesToRender.map(n => n.id));
+
+            // Primero ocultar todas las líneas que no están en la lista filtrada
             notes.forEach(note => {
                 const lineElement = document.getElementById(`line-${note.id}`);
                 if (lineElement) {
+                    if (!notesToRenderIds.has(note.id)) {
+                        lineElement.style.display = 'none';
+                    } else {
+                        lineElement.style.display = 'block';
+                    }
+                }
+            });
+
+            // Luego re-ordenar y renderizar las visibles
+            notesToRender.forEach(note => {
+                const lineElement = document.getElementById(`line-${note.id}`);
+                if (lineElement) {
+                    // Mover al final para mantener orden
+                    terminalOutput.appendChild(lineElement);
                     renderTerminalLine(lineElement, note.id, note.text);
                     // Restaurar estado de AI si ya fue procesado
                     if (note.aiProcessed) {
@@ -2331,6 +2385,15 @@
             });
 
             renderNotes();
+        }
+
+        // Toggle ocultar aceptados en modo asignación
+        function toggleAssignmentHideAccepted() {
+            const checkbox = document.getElementById('assignmentHideAcceptedCheckbox');
+            assignmentHideAccepted = checkbox.checked;
+            // Re-ejecutar el toggle para re-renderizar con el filtro aplicado
+            toggleAssignmentMode();
+            toggleAssignmentMode();
         }
 
         // Toggle selección de persona
