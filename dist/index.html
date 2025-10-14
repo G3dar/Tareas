@@ -1108,8 +1108,22 @@
         // Inicializar Supabase
         const SUPABASE_URL = 'https://rhzfstnkavzqvcymavua.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJoemZzdG5rYXZ6cXZjeW1hdnVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyMTQxMjgsImV4cCI6MjA3NTc5MDEyOH0.K6QTSU7uTvxPUIqSLS5_TI6bzmqV1hYswOpHyjLZcio';
+
+        console.log('🔧 [INIT] Inicializando Supabase client...');
+        console.log('🔧 [INIT] window.supabase disponible:', !!window.supabase);
+
+        if (!window.supabase) {
+            console.error('❌ [INIT] window.supabase NO está disponible! El CDN no cargó correctamente.');
+            alert('ERROR: Supabase library no cargó. Revisa la consola.');
+        }
+
         const { createClient } = window.supabase;
+        console.log('🔧 [INIT] createClient function:', typeof createClient);
+
         const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('✅ [INIT] Supabase client creado exitosamente');
+        console.log('🔧 [INIT] Supabase URL:', SUPABASE_URL);
+        console.log('🔧 [INIT] Key prefix:', SUPABASE_ANON_KEY.substring(0, 20) + '...');
 
         // Estado de la aplicación
         let notes = [];
@@ -2450,7 +2464,9 @@
 
             // Guardar en Supabase
             try {
-                console.log('💾 Intentando guardar en Supabase...', notes.length, 'notas');
+                console.log('💾 [SAVE] Intentando guardar en Supabase...', notes.length, 'notas');
+                console.log('💾 [SAVE] supabaseClient:', supabaseClient);
+                console.log('💾 [SAVE] Datos a guardar:', { notesCount: notes.length, historyCount: history.length });
 
                 const { data, error } = await supabaseClient
                     .from('app_data')
@@ -2460,14 +2476,19 @@
                     })
                     .eq('id', 1);
 
+                console.log('💾 [SAVE] Respuesta de Supabase - data:', data);
+                console.log('💾 [SAVE] Respuesta de Supabase - error:', error);
+
                 if (error) {
-                    console.error('❌ Error guardando en Supabase:', error);
+                    console.error('❌ [SAVE] Error guardando en Supabase:', error);
+                    console.error('❌ [SAVE] Error details:', JSON.stringify(error, null, 2));
                     showNotification('⚠️ Error guardando en Supabase. Datos guardados solo localmente.', 'error');
                 } else {
-                    console.log('✅ Guardado exitoso en Supabase');
+                    console.log('✅ [SAVE] Guardado exitoso en Supabase');
                 }
             } catch (error) {
-                console.error('❌ Error de red guardando en Supabase:', error);
+                console.error('❌ [SAVE] Error de red guardando en Supabase:', error);
+                console.error('❌ [SAVE] Error stack:', error.stack);
                 showNotification('⚠️ Error de conexión con Supabase. Datos guardados solo localmente.', 'error');
             }
         }
@@ -2494,7 +2515,8 @@
         async function loadFromLocalStorage() {
             try {
                 // Cargar desde Supabase
-                console.log('📥 Cargando datos desde Supabase...');
+                console.log('📥 [LOAD] Cargando datos desde Supabase...');
+                console.log('📥 [LOAD] supabaseClient:', supabaseClient);
 
                 const { data, error } = await supabaseClient
                     .from('app_data')
@@ -2502,22 +2524,30 @@
                     .eq('id', 1)
                     .single();
 
+                console.log('📥 [LOAD] Respuesta de Supabase - data:', data);
+                console.log('📥 [LOAD] Respuesta de Supabase - error:', error);
+
                 if (error) {
-                    console.error('❌ Error cargando desde Supabase:', error);
+                    console.error('❌ [LOAD] Error cargando desde Supabase:', error);
+                    console.error('❌ [LOAD] Error details:', JSON.stringify(error, null, 2));
                     // Fallback a localStorage
-                    console.log('⚠️ Usando localStorage como fallback');
+                    console.log('⚠️ [LOAD] Usando localStorage como fallback');
                     const savedNotes = localStorage.getItem('eggscape_notes');
                     const savedHistory = localStorage.getItem('eggscape_history');
+                    console.log('⚠️ [LOAD] localStorage notes:', savedNotes ? 'encontradas' : 'no encontradas');
+                    console.log('⚠️ [LOAD] localStorage history:', savedHistory ? 'encontrado' : 'no encontrado');
                     if (savedNotes) notes = JSON.parse(savedNotes);
                     if (savedHistory) history = JSON.parse(savedHistory);
                 } else {
+                    console.log('📥 [LOAD] data.data:', data.data);
                     notes = data.data.notes || [];
                     history = data.data.history || [];
-                    console.log('✅ Notas cargadas desde Supabase:', notes.length);
+                    console.log('✅ [LOAD] Notas cargadas desde Supabase:', notes.length);
                 }
             } catch (error) {
                 // Fallback a localStorage
-                console.error('⚠️ Error cargando desde Supabase, usando localStorage:', error);
+                console.error('⚠️ [LOAD] Exception cargando desde Supabase, usando localStorage:', error);
+                console.error('⚠️ [LOAD] Error stack:', error.stack);
                 const savedNotes = localStorage.getItem('eggscape_notes');
                 const savedHistory = localStorage.getItem('eggscape_history');
                 if (savedNotes) notes = JSON.parse(savedNotes);
