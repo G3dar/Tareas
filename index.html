@@ -1247,7 +1247,8 @@
 
         // Toggle ocultar aceptados
         function toggleHideAccepted() {
-            reviewHideAccepted = !reviewHideAccepted;
+            const checkbox = document.getElementById('hideAcceptedCheckbox');
+            reviewHideAccepted = checkbox.checked;
             renderReviewMode();
         }
 
@@ -1431,7 +1432,7 @@
                 });
             }
             if (note.difficulty) {
-                html += `<span class="review-meta-badge" style="background: #1a3a2e;">📊 ${note.difficulty.toUpperCase()}</span>`;
+                html += `<span class="review-meta-badge" style="background: #1a3a2e;">📊 <span style="color: #000; font-weight: bold;">${note.difficulty.toUpperCase()}</span></span>`;
             }
             if (note.priority) {
                 html += `<span class="review-meta-badge" style="background: ${getPriorityColor(note.priority)};">⚡ ${note.priority.toUpperCase()}</span>`;
@@ -1683,7 +1684,7 @@
                         ${note.assignedTo && note.assignedTo.length > 0 ? `
                             ${note.assignedTo.map(person => `<span class="assigned-person">👤 ${person}</span>`).join('')}
                         ` : ''}
-                        ${note.difficulty ? `<span class="assigned-person" style="background: #1a3a2e; border-color: #00ff8888;">📊 ${note.difficulty.toUpperCase()}</span>` : ''}
+                        ${note.difficulty ? `<span class="assigned-person" style="background: #1a3a2e; border-color: #00ff8888;">📊 <span style="color: #000; font-weight: bold;">${note.difficulty.toUpperCase()}</span></span>` : ''}
                         ${note.priority ? `<span class="assigned-person" style="background: ${getPriorityColor(note.priority)}; border-color: ${getPriorityColor(note.priority)};">⚡ ${note.priority.toUpperCase()}</span>` : ''}
                         <button class="edit-btn" onclick="enableAssignmentEdit(${noteId}, event)" style="margin-left: 4px; padding: 4px 8px; font-size: 0.8rem;" title="Editar asignación">✎</button>
                     </div>
@@ -1692,7 +1693,7 @@
                         ${note.assignedTo && note.assignedTo.length > 0 ? `
                             ${note.assignedTo.map(person => `<span class="assigned-person">👤 ${person}</span>`).join('')}
                         ` : ''}
-                        ${note.difficulty ? `<span class="assigned-person" style="background: #1a3a2e; border-color: #00ff8888;">📊 ${note.difficulty.toUpperCase()}</span>` : ''}
+                        ${note.difficulty ? `<span class="assigned-person" style="background: #1a3a2e; border-color: #00ff8888;">📊 <span style="color: #000; font-weight: bold;">${note.difficulty.toUpperCase()}</span></span>` : ''}
                         ${note.priority ? `<span class="assigned-person" style="background: ${getPriorityColor(note.priority)}; border-color: ${getPriorityColor(note.priority)};">⚡ ${note.priority.toUpperCase()}</span>` : ''}
                     </div>
                 ` : ''}
