@@ -1563,7 +1563,7 @@
                             ${person}
                         </button>
                         <button
-                            onclick="copyPersonLink('${person}')"
+                            onclick="copyPersonLink('${person}', event)"
                             style="padding: 4px 8px; background: #16213e; color: #00ff88; border: 1px solid #00ff8844; border-radius: 4px; cursor: pointer; font-size: 0.85rem;"
                             title="Copiar link personal de ${person}"
                         >
@@ -1584,28 +1584,35 @@
         }
 
         // Copiar link personal
-        function copyPersonLink(person) {
+        function copyPersonLink(person, event) {
             const personLower = person.toLowerCase();
             const baseUrl = window.location.origin + window.location.pathname;
             const personalUrl = `${baseUrl}?person=${personLower}`;
 
-            navigator.clipboard.writeText(personalUrl).then(() => {
-                // Mostrar notificación de éxito
-                const button = event.target;
-                const originalText = button.textContent;
-                button.textContent = '✓';
-                button.style.background = '#00ff88';
-                button.style.color = '#0a0a0f';
+            // Intentar copiar al portapapeles
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(personalUrl).then(() => {
+                    // Mostrar notificación de éxito
+                    const button = event.target;
+                    const originalText = button.textContent;
+                    button.textContent = '✓';
+                    button.style.background = '#00ff88';
+                    button.style.color = '#0a0a0f';
 
-                setTimeout(() => {
-                    button.textContent = originalText;
-                    button.style.background = '#16213e';
-                    button.style.color = '#00ff88';
-                }, 1500);
-            }).catch(err => {
-                console.error('Error copiando link:', err);
-                alert('Error al copiar el link');
-            });
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.style.background = '#16213e';
+                        button.style.color = '#00ff88';
+                    }, 1500);
+                }).catch(err => {
+                    console.error('Error copiando link:', err);
+                    // Fallback: mostrar el link en un prompt
+                    prompt('Copia este link:', personalUrl);
+                });
+            } else {
+                // Fallback si no hay soporte para clipboard API
+                prompt('Copia este link:', personalUrl);
+            }
         }
 
         // Toggle ocultar aceptados
