@@ -3193,16 +3193,30 @@
         function togglePersonInCard(noteId, person, event) {
             event.preventDefault();
             event.stopPropagation();
+
             const noteIndex = notes.findIndex(n => n.id === noteId);
             if (noteIndex !== -1) {
                 if (!notes[noteIndex].assignedTo) notes[noteIndex].assignedTo = [];
                 const index = notes[noteIndex].assignedTo.indexOf(person);
+
+                // Actualizar estado interno
                 if (index > -1) {
                     notes[noteIndex].assignedTo.splice(index, 1);
                 } else {
                     notes[noteIndex].assignedTo.push(person);
                 }
-                renderNotes(); // Re-renderizar para actualizar checkboxes
+
+                // Actualizar visualmente el checkbox sin re-renderizar todo
+                const label = event.target.closest('label');
+                const checkbox = label.querySelector('input[type="checkbox"]');
+                checkbox.checked = notes[noteIndex].assignedTo.includes(person);
+
+                // Actualizar clase CSS
+                if (checkbox.checked) {
+                    label.classList.add('selected');
+                } else {
+                    label.classList.remove('selected');
+                }
             }
         }
 
@@ -3211,7 +3225,7 @@
             const noteIndex = notes.findIndex(n => n.id === noteId);
             if (noteIndex !== -1) {
                 notes[noteIndex].difficulty = difficulty;
-                renderNotes(); // Re-renderizar para actualizar selección
+                // NO re-renderizar, dejar que el radio se maneje nativamente
             }
         }
 
@@ -3220,7 +3234,7 @@
             const noteIndex = notes.findIndex(n => n.id === noteId);
             if (noteIndex !== -1) {
                 notes[noteIndex].priority = priority;
-                renderNotes(); // Re-renderizar para actualizar selección
+                // NO re-renderizar, dejar que el radio se maneje nativamente
             }
         }
 
@@ -3228,6 +3242,7 @@
             event.stopPropagation();
             const noteIndex = notes.findIndex(n => n.id === noteId);
             if (noteIndex !== -1) {
+                // Guardar a base de datos
                 saveToLocalStorage();
 
                 // Log en historial
