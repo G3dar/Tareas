@@ -88,9 +88,14 @@ Sistema de notas para builds de Eggscape con organización automática mediante 
 - **📥 Exportar**: Descarga JSON con todas las notas
 - **👥 Exportar por Persona**: Genera archivo de texto organizado por persona con sus tareas
 
+## 🚀 Auto-Deploy
+
+Este proyecto está configurado con GitHub Actions para desplegar automáticamente a Render en cada push a la rama `main`.
+
 ## 💡 Tips
 
 - Usa Enter para agregar notas rápidamente
 - El historial guarda todas las acciones
 - Click en una nota para editarla
 - El botón "🔄 Recategorizar y Agrupar" reorganiza todas las notas
+- En modo revisión, filtra por persona u oculta tareas aceptadas
