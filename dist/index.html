@@ -3191,6 +3191,7 @@
 
         // Funciones para asignación en tarjetas (note cards)
         function togglePersonInCard(noteId, person, event) {
+            event.preventDefault();
             event.stopPropagation();
             const noteIndex = notes.findIndex(n => n.id === noteId);
             if (noteIndex !== -1) {
