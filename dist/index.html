@@ -3239,6 +3239,17 @@
 
             countEl.textContent = `${filteredNotes.length} nota${filteredNotes.length !== 1 ? 's' : ''}`;
 
+            // En modo asignación, ordenar notas sin personas asignadas primero
+            if (assignmentMode) {
+                filteredNotes = filteredNotes.sort((a, b) => {
+                    const aHasPeople = a.assignedTo && a.assignedTo.length > 0;
+                    const bHasPeople = b.assignedTo && b.assignedTo.length > 0;
+                    if (!aHasPeople && bHasPeople) return -1;
+                    if (aHasPeople && !bHasPeople) return 1;
+                    return 0;
+                });
+            }
+
             // Agrupar por categoría y tags
             const grouped = {};
             filteredNotes.forEach(note => {
@@ -3344,6 +3355,19 @@
             // Renderizar notas por persona
             let html = '';
 
+            // En modo asignación, mostrar notas sin asignar primero
+            if (assignmentMode && unassigned.length > 0) {
+                html += `
+                    <div class="person-group">
+                        <div class="person-group-header" style="color: #888; border-color: #444;">
+                            <span>❓ Sin Asignar</span>
+                            <span style="font-size: 0.9rem;">(${unassigned.length})</span>
+                        </div>
+                        ${unassigned.map(note => renderNoteCard(note)).join('')}
+                    </div>
+                `;
+            }
+
             // Notas asignadas por persona
             people.forEach(person => {
                 if (groupedByPerson[person] && groupedByPerson[person].length > 0) {
@@ -3362,8 +3386,8 @@
                 }
             });
 
-            // Notas sin asignar
-            if (unassigned.length > 0) {
+            // Notas sin asignar al final (si NO estamos en modo asignación)
+            if (!assignmentMode && unassigned.length > 0) {
                 html += `
                     <div class="person-group">
                         <div class="person-group-header" style="color: #888; border-color: #444;">
