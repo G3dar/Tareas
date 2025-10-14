@@ -2223,16 +2223,6 @@
                 </div>
             </div>`;
 
-            // Botón de siguiente estado
-            if (currentStatus === 'not_started') {
-                html += `<button onclick="advanceWorkStatus(${note.id})" style="padding: 8px 16px; background: ${workStatusColors.wip}; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-family: 'Courier New', monospace; font-size: 0.85rem; font-weight: bold;">PASAR A >> WIP</button>`;
-            } else if (currentStatus === 'wip') {
-                html += `<button onclick="advanceWorkStatus(${note.id})" style="padding: 8px 16px; background: ${workStatusColors.awaiting_review}; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-family: 'Courier New', monospace; font-size: 0.85rem; font-weight: bold;">PASAR A >> LISTO PARA REVISIÓN</button>`;
-            } else if (currentStatus === 'awaiting_review') {
-                html += `<button onclick="setWorkStatus(${note.id}, 'accepted', event)" style="padding: 8px 16px; background: ${workStatusColors.accepted}; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-family: 'Courier New', monospace; font-size: 0.85rem; font-weight: bold; margin-right: 5px;">PASAR A >> ACEPTADO</button>`;
-                html += `<button onclick="setWorkStatus(${note.id}, 'rejected', event)" style="padding: 8px 16px; background: ${workStatusColors.rejected}; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-family: 'Courier New', monospace; font-size: 0.85rem; font-weight: bold;">PASAR A >> RECHAZADO</button>`;
-            }
-
             html += `</div>`;
 
             // ===== TEXTO DE LA NOTA =====
@@ -2282,19 +2272,34 @@
 
             html += `</div>`; // Cerrar columna izquierda
 
-            // ===== COLUMNA DERECHA (comentarios) =====
+            // ===== COLUMNA DERECHA (comentarios y botones) =====
             html += `<div style="width: 300px; flex-shrink: 0;">
-                <div style="background: #16213e; border-radius: 6px; padding: 12px; height: 100%;">
-                    <div style="color: #888; font-size: 0.75rem; font-weight: bold; margin-bottom: 8px;">💬 COMENTARIOS</div>
-                    <textarea
-                        id="review-comment-${note.id}"
-                        placeholder="Agrega comentarios sobre esta tarea..."
-                        style="width: 100%; min-height: 100px; background: #0f0f1a; border: 1px solid #1a1a2e;
-                               color: #eee; padding: 8px; border-radius: 4px; font-family: 'Courier New', monospace;
-                               font-size: 0.85rem; resize: vertical;"
-                        onblur="saveReviewComment(${note.id})">${note.reviewComment || ''}</textarea>
-                    <div style="color: #666; font-size: 0.7rem; margin-top: 4px;">Se guarda automáticamente</div>
-                </div>
+                <div style="background: #16213e; border-radius: 6px; padding: 12px; height: 100%; display: flex; flex-direction: column; gap: 15px;">
+                    <div>
+                        <div style="color: #888; font-size: 0.75rem; font-weight: bold; margin-bottom: 8px;">💬 COMENTARIOS</div>
+                        <textarea
+                            id="review-comment-${note.id}"
+                            placeholder="Agrega comentarios sobre esta tarea..."
+                            style="width: 100%; min-height: 100px; background: #0f0f1a; border: 1px solid #1a1a2e;
+                                   color: #eee; padding: 8px; border-radius: 4px; font-family: 'Courier New', monospace;
+                                   font-size: 0.85rem; resize: vertical;"
+                            onblur="saveReviewComment(${note.id})">${note.reviewComment || ''}</textarea>
+                        <div style="color: #666; font-size: 0.7rem; margin-top: 4px;">Se guarda automáticamente</div>
+                    </div>`;
+
+            // Botones de siguiente estado
+            html += `<div style="border-top: 1px solid #1a1a2e; padding-top: 12px;">`;
+            if (currentStatus === 'not_started') {
+                html += `<button onclick="advanceWorkStatus(${note.id})" style="width: 100%; padding: 10px 16px; background: ${workStatusColors.wip}; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-family: 'Courier New', monospace; font-size: 0.85rem; font-weight: bold;">PASAR A >> WIP</button>`;
+            } else if (currentStatus === 'wip') {
+                html += `<button onclick="advanceWorkStatus(${note.id})" style="width: 100%; padding: 10px 16px; background: ${workStatusColors.awaiting_review}; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-family: 'Courier New', monospace; font-size: 0.85rem; font-weight: bold;">PASAR A >> LISTO PARA REVISIÓN</button>`;
+            } else if (currentStatus === 'awaiting_review') {
+                html += `<button onclick="setWorkStatus(${note.id}, 'accepted', event)" style="width: 100%; padding: 10px 16px; background: ${workStatusColors.accepted}; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-family: 'Courier New', monospace; font-size: 0.85rem; font-weight: bold; margin-bottom: 8px;">PASAR A >> ACEPTADO</button>`;
+                html += `<button onclick="setWorkStatus(${note.id}, 'rejected', event)" style="width: 100%; padding: 10px 16px; background: ${workStatusColors.rejected}; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-family: 'Courier New', monospace; font-size: 0.85rem; font-weight: bold;">PASAR A >> RECHAZADO</button>`;
+            }
+            html += `</div>`;
+
+            html += `</div>
             </div>`;
 
             html += `</div>`; // Cerrar review-item
