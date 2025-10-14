@@ -2209,12 +2209,12 @@
 
             // Botón de siguiente estado
             if (currentStatus === 'not_started') {
-                html += `<button onclick="advanceWorkStatus(${note.id})" style="padding: 8px 16px; background: ${workStatusColors.wip}; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-family: 'Courier New', monospace; font-size: 0.95rem;">▶ Empezar</button>`;
+                html += `<button onclick="advanceWorkStatus(${note.id})" style="padding: 8px 16px; background: ${workStatusColors.wip}; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-family: 'Courier New', monospace; font-size: 0.85rem; font-weight: bold;">PASAR A >> WIP</button>`;
             } else if (currentStatus === 'wip') {
-                html += `<button onclick="advanceWorkStatus(${note.id})" style="padding: 8px 16px; background: ${workStatusColors.awaiting_review}; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-family: 'Courier New', monospace; font-size: 0.95rem;">✓ Listo para Revisión</button>`;
+                html += `<button onclick="advanceWorkStatus(${note.id})" style="padding: 8px 16px; background: ${workStatusColors.awaiting_review}; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-family: 'Courier New', monospace; font-size: 0.85rem; font-weight: bold;">PASAR A >> LISTO PARA REVISIÓN</button>`;
             } else if (currentStatus === 'awaiting_review') {
-                html += `<button onclick="setWorkStatus(${note.id}, 'accepted', event)" style="padding: 6px 12px; background: ${workStatusColors.accepted}; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-family: 'Courier New', monospace; font-size: 0.9rem; margin-right: 5px;">✓ Aceptar</button>`;
-                html += `<button onclick="setWorkStatus(${note.id}, 'rejected', event)" style="padding: 6px 12px; background: ${workStatusColors.rejected}; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-family: 'Courier New', monospace; font-size: 0.9rem;">✗ Rechazar</button>`;
+                html += `<button onclick="setWorkStatus(${note.id}, 'accepted', event)" style="padding: 8px 16px; background: ${workStatusColors.accepted}; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-family: 'Courier New', monospace; font-size: 0.85rem; font-weight: bold; margin-right: 5px;">PASAR A >> ACEPTADO</button>`;
+                html += `<button onclick="setWorkStatus(${note.id}, 'rejected', event)" style="padding: 8px 16px; background: ${workStatusColors.rejected}; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-family: 'Courier New', monospace; font-size: 0.85rem; font-weight: bold;">PASAR A >> RECHAZADO</button>`;
             }
 
             html += `</div>`;
