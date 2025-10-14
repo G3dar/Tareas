@@ -2089,7 +2089,7 @@
             // Filtro para ocultar aceptados
             if (reviewHideAccepted) {
                 filteredNotes = filteredNotes.filter(note => {
-                    return note.reviewStatus !== 'accepted';
+                    return note.workStatus !== 'accepted';
                 });
             }
 
