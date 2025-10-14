@@ -1455,6 +1455,17 @@
                 Ocultar aceptados
             </label>
         </div>
+        <!-- Input para nuevas notas -->
+        <div class="terminal-input-container" style="margin: 15px 20px;">
+            <div class="terminal-input-wrapper">
+                <span class="prompt">></span>
+                <input
+                    type="text"
+                    id="buildReviewInput"
+                    placeholder="Escribe aquí tu nota..."
+                >
+            </div>
+        </div>
         <div class="review-content" id="buildReviewContent">
             <div class="empty-state">No hay notas para esta semana</div>
         </div>
@@ -2368,6 +2379,14 @@
                 }
             });
 
+            // Configurar Enter para agregar nota desde BUILD REVIEW
+            const buildReviewInput = document.getElementById('buildReviewInput');
+            buildReviewInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    addNote(); // NO AWAIT - no bloquear
+                }
+            });
+
             // Mantener focus en el input (solo si no hay selección de texto)
             document.addEventListener('click', (e) => {
                 const hasSelection = window.getSelection().toString().length > 0;
@@ -2379,8 +2398,20 @@
 
         // Agregar nota - NO ASYNC
         function addNote() {
-            const input = document.getElementById('terminalInput');
-            const text = input.value.trim();
+            const mainInput = document.getElementById('terminalInput');
+            const buildInput = document.getElementById('buildReviewInput');
+
+            // Intentar obtener texto de ambos inputs
+            let text = '';
+            let activeInput = null;
+
+            if (mainInput && mainInput.value.trim()) {
+                text = mainInput.value.trim();
+                activeInput = mainInput;
+            } else if (buildInput && buildInput.value.trim()) {
+                text = buildInput.value.trim();
+                activeInput = buildInput;
+            }
 
             if (!text) return;
 
@@ -2405,8 +2436,8 @@
             addTerminalLine(text, note.id);
 
             // Limpiar input INMEDIATAMENTE
-            input.value = '';
-            input.focus();
+            activeInput.value = '';
+            activeInput.focus();
 
             // Guardar y renderizar INMEDIATAMENTE
             saveToLocalStorage();
@@ -3779,6 +3810,7 @@
             // Asegurar que todas las notas tengan workStatus (backward compatibility)
             notes.forEach(note => {
                 if (!note.workStatus) note.workStatus = 'not_started';
+                if (!note.buildReviewDate) note.buildReviewDate = note.timestamp || new Date().toISOString();
             });
 
             // Renderizar notas cargadas
