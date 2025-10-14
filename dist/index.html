@@ -3277,15 +3277,28 @@
                                 ${getCategoryEmoji(category)} ${category}
                                 <span style="color: #888; font-size: 0.85rem; margin-left: 10px;">(${totalInCategory})</span>
                             </div>
-                            ${Object.entries(tagGroups).map(([tag, tagNotes]) => `
-                                <div class="tag-group">
-                                    <div class="tag-group-header">
-                                        <span>${tag}</span>
-                                        <span class="tag-badge">${tagNotes.length}</span>
+                            ${Object.entries(tagGroups).map(([tag, tagNotes]) => {
+                                // En modo asignación, ordenar notas sin personas primero dentro de cada tag
+                                let sortedTagNotes = tagNotes;
+                                if (assignmentMode) {
+                                    sortedTagNotes = [...tagNotes].sort((a, b) => {
+                                        const aHasPeople = a.assignedTo && a.assignedTo.length > 0;
+                                        const bHasPeople = b.assignedTo && b.assignedTo.length > 0;
+                                        if (!aHasPeople && bHasPeople) return -1;
+                                        if (aHasPeople && !bHasPeople) return 1;
+                                        return 0;
+                                    });
+                                }
+                                return `
+                                    <div class="tag-group">
+                                        <div class="tag-group-header">
+                                            <span>${tag}</span>
+                                            <span class="tag-badge">${sortedTagNotes.length}</span>
+                                        </div>
+                                        ${sortedTagNotes.map(note => renderNoteCard(note)).join('')}
                                     </div>
-                                    ${tagNotes.map(note => renderNoteCard(note)).join('')}
-                                </div>
-                            `).join('')}
+                                `;
+                            }).join('')}
                         </div>
                     `;
                 })
