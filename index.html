@@ -1500,6 +1500,7 @@
                     type="text"
                     id="buildReviewInput"
                     placeholder="Escribe aquí tu nota..."
+                    onkeypress="if(event.key === 'Enter') addNote()"
                 >
             </div>
         </div>
@@ -2458,11 +2459,13 @@
 
             // Configurar Enter para agregar nota desde BUILD REVIEW
             const buildReviewInput = document.getElementById('buildReviewInput');
-            buildReviewInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    addNote(); // NO AWAIT - no bloquear
-                }
-            });
+            if (buildReviewInput) {
+                buildReviewInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        addNote(); // NO AWAIT - no bloquear
+                    }
+                });
+            }
 
             // Mantener focus en el input (solo si no hay selección de texto)
             document.addEventListener('click', (e) => {
