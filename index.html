@@ -662,6 +662,28 @@
             font-family: 'Courier New', monospace;
         }
 
+        .day-filter-btn {
+            padding: 6px 14px;
+            background: #16213e;
+            color: #888;
+            border: 1px solid #00ff8844;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-family: 'Courier New', monospace;
+            transition: all 0.2s;
+        }
+
+        .day-filter-btn.active {
+            background: #00ff88;
+            color: #0a0a0f;
+            font-weight: bold;
+        }
+
+        .day-filter-btn:hover {
+            background: #1a2e3e;
+        }
+
         .history-content {
             flex: 1;
             overflow-y: auto;
@@ -1316,6 +1338,9 @@
         <h1>🥚 Eggscape Build Notes</h1>
         <div style="display: flex; gap: 15px; align-items: center;">
             <div class="date">2025-10-13</div>
+            <button class="assignment-mode-toggle active" id="buildReviewModeBtn" onclick="toggleBuildReviewMode()" style="background: #1a3a2e; color: #00ff88; border-color: #00ff8844;">
+                📝 BUILD REVIEW
+            </button>
             <button class="assignment-mode-toggle" id="assignmentModeBtn" onclick="toggleAssignmentMode()">
                 👥 MODO ASIGNACIÓN
             </button>
@@ -1397,6 +1422,44 @@
         </div>
     </div>
 
+    <!-- Panel de BUILD REVIEW -->
+    <div class="review-panel active" id="buildReviewPanel">
+        <div class="review-header">
+            <h3>📝 Build Review</h3>
+            <div class="review-controls">
+                <button class="close-btn" onclick="toggleBuildReviewMode()">Cerrar</button>
+            </div>
+        </div>
+        <div class="review-filter-container">
+            <!-- Filtros de días de la semana -->
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 15px;">
+                <span style="color: #888; font-size: 0.85rem; margin-right: 5px;">Día:</span>
+                <button onclick="filterBuildReviewByDay('mon')" id="dayBtn-mon" class="day-filter-btn">LUN</button>
+                <button onclick="filterBuildReviewByDay('tue')" id="dayBtn-tue" class="day-filter-btn">MAR</button>
+                <button onclick="filterBuildReviewByDay('wed')" id="dayBtn-wed" class="day-filter-btn">MIE</button>
+                <button onclick="filterBuildReviewByDay('thu')" id="dayBtn-thu" class="day-filter-btn">JUE</button>
+                <button onclick="filterBuildReviewByDay('fri')" id="dayBtn-fri" class="day-filter-btn">VIE</button>
+                <button onclick="filterBuildReviewByDay('sat')" id="dayBtn-sat" class="day-filter-btn">SAB</button>
+                <button onclick="filterBuildReviewByDay('sun')" id="dayBtn-sun" class="day-filter-btn">DOM</button>
+                <div style="border-left: 2px solid #16213e; height: 20px; margin: 0 5px;"></div>
+                <button onclick="filterBuildReviewByDay('all')" id="dayBtn-all" class="day-filter-btn" style="font-weight: bold;">TODOS</button>
+            </div>
+            <!-- Checkbox ocultar aceptados -->
+            <label style="display: flex; align-items: center; gap: 6px; color: #00ff88; font-size: 0.9rem; cursor: pointer;">
+                <input
+                    type="checkbox"
+                    id="buildReviewHideAcceptedCheckbox"
+                    onchange="toggleBuildReviewHideAccepted()"
+                    style="cursor: pointer;"
+                >
+                Ocultar aceptados
+            </label>
+        </div>
+        <div class="review-content" id="buildReviewContent">
+            <div class="empty-state">No hay notas para esta semana</div>
+        </div>
+    </div>
+
     <div class="review-panel" id="reviewPanel">
         <div class="review-header">
             <h3>✓ Modo Revisión</h3>
@@ -1448,6 +1511,9 @@
         // Estado de la aplicación
         let notes = [];
         let history = [];
+        let buildReviewMode = true; // Modo BUILD REVIEW activo por default
+        let buildReviewSelectedDay = 'all'; // 'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun', 'all'
+        let buildReviewHideAccepted = false; // Ocultar tareas aceptadas en build review
         let assignmentMode = false;
         let assignmentViewMode = 'category'; // 'category' o 'person'
         let assignmentHideAccepted = false; // Ocultar tareas aceptadas en modo asignación
@@ -1701,6 +1767,229 @@
             const input = document.getElementById('reviewFilterInput');
             reviewFilterText = input.value.toLowerCase().trim();
             renderReviewMode();
+        }
+
+        // ===== BUILD REVIEW FUNCTIONS =====
+
+        // Toggle modo BUILD REVIEW
+        function toggleBuildReviewMode() {
+            buildReviewMode = !buildReviewMode;
+            const btn = document.getElementById('buildReviewModeBtn');
+            const panel = document.getElementById('buildReviewPanel');
+            const mainContainer = document.querySelector('.main-container');
+
+            if (buildReviewMode) {
+                btn.classList.add('active');
+                panel.classList.add('active');
+                mainContainer.classList.add('review-active');
+                renderBuildReview();
+            } else {
+                btn.classList.remove('active');
+                panel.classList.remove('active');
+                mainContainer.classList.remove('review-active');
+            }
+        }
+
+        // Filtrar BUILD REVIEW por día
+        function filterBuildReviewByDay(day) {
+            buildReviewSelectedDay = day;
+
+            // Actualizar estilos de botones
+            const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun', 'all'];
+            days.forEach(d => {
+                const btn = document.getElementById(`dayBtn-${d}`);
+                if (btn) {
+                    if (d === day) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                }
+            });
+
+            renderBuildReview();
+        }
+
+        // Toggle ocultar aceptados en BUILD REVIEW
+        function toggleBuildReviewHideAccepted() {
+            const checkbox = document.getElementById('buildReviewHideAcceptedCheckbox');
+            buildReviewHideAccepted = checkbox.checked;
+            renderBuildReview();
+        }
+
+        // Obtener día de la semana de una fecha (0=Domingo, 1=Lunes, ...)
+        function getDayOfWeek(dateString) {
+            const date = new Date(dateString);
+            return date.getDay(); // 0=Domingo, 1=Lunes, ..., 6=Sábado
+        }
+
+        // Mapear día de la semana a código
+        function getDayCode(dayNumber) {
+            const dayMap = {
+                0: 'sun',
+                1: 'mon',
+                2: 'tue',
+                3: 'wed',
+                4: 'thu',
+                5: 'fri',
+                6: 'sat'
+            };
+            return dayMap[dayNumber];
+        }
+
+        // Obtener inicio de la semana actual (Lunes)
+        function getStartOfWeek(date = new Date()) {
+            const d = new Date(date);
+            const day = d.getDay();
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Ajustar cuando es domingo
+            return new Date(d.setDate(diff));
+        }
+
+        // Obtener fin de la semana actual (Domingo)
+        function getEndOfWeek(date = new Date()) {
+            const start = getStartOfWeek(date);
+            const end = new Date(start);
+            end.setDate(start.getDate() + 6);
+            return end;
+        }
+
+        // Renderizar BUILD REVIEW
+        function renderBuildReview() {
+            const container = document.getElementById('buildReviewContent');
+
+            if (notes.length === 0) {
+                container.innerHTML = '<div class="empty-state">No hay notas para esta semana</div>';
+                return;
+            }
+
+            // Filtrar notas de la semana actual
+            const weekStart = getStartOfWeek();
+            const weekEnd = getEndOfWeek();
+            weekEnd.setHours(23, 59, 59, 999);
+
+            let filteredNotes = notes.filter(note => {
+                const noteDate = new Date(note.buildReviewDate);
+                return noteDate >= weekStart && noteDate <= weekEnd;
+            });
+
+            // Filtrar por día seleccionado
+            if (buildReviewSelectedDay !== 'all') {
+                filteredNotes = filteredNotes.filter(note => {
+                    const dayOfWeek = getDayOfWeek(note.buildReviewDate);
+                    const dayCode = getDayCode(dayOfWeek);
+                    return dayCode === buildReviewSelectedDay;
+                });
+            }
+
+            // Filtrar ocultar aceptados
+            if (buildReviewHideAccepted) {
+                filteredNotes = filteredNotes.filter(note => note.reviewStatus !== 'accepted');
+            }
+
+            if (filteredNotes.length === 0) {
+                container.innerHTML = '<div class="empty-state">No hay notas para este día</div>';
+                return;
+            }
+
+            // Renderizar lista simple
+            let html = '<div style="padding: 10px;">';
+            filteredNotes.forEach(note => {
+                const dayOfWeek = getDayOfWeek(note.buildReviewDate);
+                const dayCode = getDayCode(dayOfWeek);
+                const dayNames = {
+                    'mon': 'Lunes',
+                    'tue': 'Martes',
+                    'wed': 'Miércoles',
+                    'thu': 'Jueves',
+                    'fri': 'Viernes',
+                    'sat': 'Sábado',
+                    'sun': 'Domingo'
+                };
+
+                html += `<div style="background: #0f0f1a; padding: 15px; margin-bottom: 10px; border-radius: 5px; border-left: 3px solid #00ff88;">`;
+
+                // Mostrar día si estamos en vista "TODOS"
+                if (buildReviewSelectedDay === 'all') {
+                    html += `<div style="color: #888; font-size: 0.85rem; margin-bottom: 5px;">${dayNames[dayCode]}</div>`;
+                }
+
+                html += `<div style="color: #eee; margin-bottom: 10px;">${escapeHtml(note.text)}</div>`;
+
+                // Mostrar categoría y tags si ya fueron procesados
+                if (note.aiProcessed) {
+                    html += `<div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">`;
+                    html += `<span style="background: #16213e; color: #00ff88; padding: 3px 8px; border-radius: 3px; font-size: 0.85rem;">${note.category}</span>`;
+                    if (note.tags && note.tags.length > 0) {
+                        note.tags.forEach(tag => {
+                            html += `<span style="background: #1a1a2e; color: #888; padding: 3px 8px; border-radius: 3px; font-size: 0.85rem;">${tag}</span>`;
+                        });
+                    }
+                    html += `</div>`;
+                }
+
+                html += `</div>`;
+            });
+            html += '</div>';
+
+            container.innerHTML = html;
+        }
+
+        // Roll-over semanal: mover notas no aceptadas al lunes actual
+        async function performWeeklyRollover() {
+            const today = new Date();
+            const dayOfWeek = today.getDay();
+
+            // Solo ejecutar el roll-over los lunes (día 1)
+            if (dayOfWeek !== 1) {
+                return;
+            }
+
+            // Obtener la semana actual (número de semana del año)
+            const weekNumber = getWeekNumber(today);
+            const lastRolloverWeek = localStorage.getItem('lastRolloverWeek');
+
+            // Si ya se hizo el roll-over esta semana, salir
+            if (lastRolloverWeek && parseInt(lastRolloverWeek) === weekNumber) {
+                console.log('✅ Roll-over ya ejecutado esta semana');
+                return;
+            }
+
+            console.log('🔄 Ejecutando roll-over semanal...');
+
+            // Obtener inicio de la semana actual (este lunes)
+            const thisMonday = getStartOfWeek(today);
+
+            // Buscar notas NO aceptadas de semanas anteriores
+            let notesRolledOver = 0;
+            notes.forEach(note => {
+                const noteDate = new Date(note.buildReviewDate);
+
+                // Si la nota es de una semana anterior Y NO está aceptada
+                if (noteDate < thisMonday && note.reviewStatus !== 'accepted') {
+                    // Mover al lunes de esta semana
+                    note.buildReviewDate = thisMonday.toISOString();
+                    notesRolledOver++;
+                }
+            });
+
+            // Guardar que ya se hizo el roll-over esta semana
+            localStorage.setItem('lastRolloverWeek', weekNumber.toString());
+
+            if (notesRolledOver > 0) {
+                console.log(`✅ Roll-over completado: ${notesRolledOver} notas movidas al lunes`);
+                await saveToLocalStorage();
+            } else {
+                console.log('✅ Roll-over completado: no hay notas para mover');
+            }
+        }
+
+        // Obtener número de semana del año
+        function getWeekNumber(d) {
+            d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+            d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+            const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+            const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+            return weekNo;
         }
 
         // Renderizar modo revisión
@@ -1984,6 +2273,9 @@
         async function init() {
             await loadFromLocalStorage();
 
+            // Ejecutar roll-over semanal (solo lunes, solo una vez por semana)
+            await performWeeklyRollover();
+
             // Detectar si hay un parámetro person en la URL
             const urlParams = new URLSearchParams(window.location.search);
             const personParam = urlParams.get('person');
@@ -1992,11 +2284,16 @@
                 // Modo personal: activar modo revisión con filtro de persona
                 const personUpper = personParam.toUpperCase();
                 if (people.includes(personUpper)) {
+                    // Desactivar BUILD REVIEW y activar REVIEW MODE
+                    buildReviewMode = false;
                     reviewMode = true;
                     reviewFilterPerson = personUpper;
                     reviewGroupByPerson = true;
 
-                    // Activar el panel de revisión y ocultar el main container
+                    // Actualizar botones
+                    document.getElementById('buildReviewModeBtn').classList.remove('active');
+                    document.getElementById('buildReviewPanel').classList.remove('active');
+                    document.getElementById('reviewModeBtn').classList.add('active');
                     document.getElementById('reviewPanel').classList.add('active');
                     document.querySelector('.main-container').classList.add('review-active');
 
@@ -2006,6 +2303,13 @@
                 }
             }
 
+            // BUILD REVIEW es el modo default
+            // Marcar el botón "TODOS" como activo
+            const allBtn = document.getElementById('dayBtn-all');
+            if (allBtn) allBtn.classList.add('active');
+
+            // Renderizar BUILD REVIEW
+            renderBuildReview();
             renderNotes();
             renderHistory();
 
@@ -2046,6 +2350,7 @@
                 rejectionComment: '', // Comentario si fue rechazado
                 workStatus: 'not_started', // Estado de trabajo
                 timestamp: new Date().toISOString(),
+                buildReviewDate: new Date().toISOString(), // Fecha de build review
                 aiProcessed: false
             };
 
@@ -2059,6 +2364,9 @@
             // Guardar y renderizar INMEDIATAMENTE
             saveToLocalStorage();
             renderNotes();
+            if (buildReviewMode) {
+                renderBuildReview(); // Actualizar BUILD REVIEW también
+            }
 
             // Procesar con AI en background (no bloquea)
             processWithAI(note); // Sin await - corre en background
@@ -3289,6 +3597,7 @@
                         if (!note.reviewStatus) note.reviewStatus = null;
                         if (!note.rejectionComment) note.rejectionComment = '';
                         if (!note.workStatus) note.workStatus = 'not_started';
+                        if (!note.buildReviewDate) note.buildReviewDate = note.timestamp || new Date().toISOString();
 
                         notes.push(note);
                         addTerminalLine(note.text, note.id);
