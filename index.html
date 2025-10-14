@@ -1531,6 +1531,7 @@
         let assignmentFilterText = ''; // Texto del filtro de asignación
         let assignmentFilterPerson = null; // Filtro por persona en modo asignación (null = todas)
         let collapsedAssignments = new Set(); // IDs de notas con asignaciones colapsadas
+        let editingAssignments = new Set(); // IDs de notas en modo de edición de asignación
         let reviewMode = false;
         let reviewGroupByPerson = true; // true = por persona, false = por categoría/tags
         let reviewFilterText = ''; // Texto del filtro de revisión
@@ -2469,20 +2470,24 @@
             // Verificar si esta nota específica está colapsada (ya se le dio aceptar)
             const isCollapsed = collapsedAssignments.has(noteId);
 
+            // Verificar si está en modo de edición de asignación
+            const isEditingAssignment = editingAssignments.has(noteId);
+
             // Verificar si la tarea ya tiene asignaciones
             const hasAssignments = (note.assignedTo && note.assignedTo.length > 0) || note.difficulty || note.priority;
 
             // Mostrar UI de asignación solo si:
             // - Estamos en modo asignación
             // - NO está colapsada
-            // - NO tiene asignaciones previas (las asignadas solo se editan con el icono)
-            const showAssignmentUI = assignmentMode && !isCollapsed && !hasAssignments;
+            // - NO tiene asignaciones previas O está en modo de edición
+            const showAssignmentUI = assignmentMode && !isCollapsed && (!hasAssignments || isEditingAssignment);
 
             // Mostrar vista de asignación existente con opción de editar si:
             // - Estamos en modo asignación
             // - NO está colapsada
             // - SÍ tiene asignaciones previas
-            const showAssignedWithEdit = assignmentMode && !isCollapsed && hasAssignments;
+            // - NO está en modo de edición
+            const showAssignedWithEdit = assignmentMode && !isCollapsed && hasAssignments && !isEditingAssignment;
 
             lineElement.innerHTML = `
                 <div class="terminal-line-main">
@@ -2900,8 +2905,9 @@
             } else {
                 btn.classList.remove('active');
                 if (filterBar) filterBar.style.display = 'none';
-                // Al salir del modo, limpiar las colapsadas
+                // Al salir del modo, limpiar las colapsadas y editingAssignments
                 collapsedAssignments.clear();
+                editingAssignments.clear();
             }
 
             // Re-renderizar todas las líneas del terminal
@@ -3116,6 +3122,8 @@
 
                 // Marcar esta nota como colapsada (cerrada) pero NO salir del modo de asignación
                 collapsedAssignments.add(noteId);
+                // Remover del modo de edición
+                editingAssignments.delete(noteId);
 
                 // Re-renderizar SOLO esta línea del terminal
                 const lineElement = document.getElementById(`line-${noteId}`);
@@ -3137,6 +3145,9 @@
 
             // Remover de las colapsadas para mostrar la UI de asignación
             collapsedAssignments.delete(noteId);
+
+            // Agregar a editingAssignments para forzar mostrar la UI de asignación
+            editingAssignments.add(noteId);
 
             // Re-renderizar la línea del terminal para mostrar las opciones de asignación
             const note = notes.find(n => n.id === noteId);
