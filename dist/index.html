@@ -2184,7 +2184,10 @@
             const statusColor = workStatusColors[currentStatus];
             const statusLabel = workStatusLabels[currentStatus];
 
-            let html = `<div class="review-item">`;
+            let html = `<div class="review-item" style="display: flex; gap: 20px;">`;
+
+            // ===== COLUMNA IZQUIERDA (contenido principal) =====
+            html += `<div style="flex: 1; min-width: 0;">`;
 
             // ===== STATUS ARRIBA (muy separado) =====
             html += `<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #1a1a2e;">`;
@@ -2264,8 +2267,43 @@
                 </div>`;
             }
 
-            html += `</div>`;
+            html += `</div>`; // Cerrar columna izquierda
+
+            // ===== COLUMNA DERECHA (comentarios) =====
+            html += `<div style="width: 300px; flex-shrink: 0;">
+                <div style="background: #16213e; border-radius: 6px; padding: 12px; height: 100%;">
+                    <div style="color: #888; font-size: 0.75rem; font-weight: bold; margin-bottom: 8px;">💬 COMENTARIOS</div>
+                    <textarea
+                        id="review-comment-${note.id}"
+                        placeholder="Agrega comentarios sobre esta tarea..."
+                        style="width: 100%; min-height: 100px; background: #0f0f1a; border: 1px solid #1a1a2e;
+                               color: #eee; padding: 8px; border-radius: 4px; font-family: 'Courier New', monospace;
+                               font-size: 0.85rem; resize: vertical;"
+                        onblur="saveReviewComment(${note.id})">${note.reviewComment || ''}</textarea>
+                    <div style="color: #666; font-size: 0.7rem; margin-top: 4px;">Se guarda automáticamente</div>
+                </div>
+            </div>`;
+
+            html += `</div>`; // Cerrar review-item
             return html;
+        }
+
+        // Guardar comentario de revisión
+        function saveReviewComment(noteId) {
+            const textarea = document.getElementById(`review-comment-${noteId}`);
+            if (!textarea) return;
+
+            const comment = textarea.value.trim();
+            const noteIndex = notes.findIndex(n => n.id === noteId);
+
+            if (noteIndex !== -1) {
+                notes[noteIndex].reviewComment = comment;
+                saveToLocalStorage();
+
+                if (comment) {
+                    addToHistory('comment', `Comentario agregado a "${notes[noteIndex].text.substring(0, 50)}..."`);
+                }
+            }
         }
 
         // Avanzar al siguiente estado de trabajo
@@ -2453,6 +2491,7 @@
                 assignedTo: [], // Sin asignaciones por defecto
                 reviewStatus: null, // 'accepted' | 'rejected' | null
                 rejectionComment: '', // Comentario si fue rechazado
+                reviewComment: '', // Comentario de revisión
                 workStatus: 'not_started', // Estado de trabajo
                 timestamp: new Date().toISOString(),
                 buildReviewDate: new Date().toISOString(), // Fecha de build review
@@ -4080,6 +4119,7 @@
             notes.forEach(note => {
                 if (!note.workStatus) note.workStatus = 'not_started';
                 if (!note.buildReviewDate) note.buildReviewDate = note.timestamp || new Date().toISOString();
+                if (note.reviewComment === undefined) note.reviewComment = '';
             });
 
             // Renderizar notas cargadas
