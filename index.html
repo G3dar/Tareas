@@ -2263,15 +2263,23 @@
                 return;
             }
 
-            if (!confirm(`¿Recategorizar y agrupar TODAS las ${notes.length} nota${notes.length !== 1 ? 's' : ''} con AI?\n\nEsto reorganizará todas las notas por categorías y agrupará items similares con tags comunes.`)) {
+            // Filtrar solo las que no tienen categoría o están en "Other"
+            const notesToRecategorize = notes.filter(note => !note.category || note.category === 'Other');
+
+            if (notesToRecategorize.length === 0) {
+                alert('No hay notas sin categoría o en "Other" para recategorizar');
                 return;
             }
 
-            console.log(`🔄 Recategorizando y agrupando ${notes.length} notas...`);
-            addToHistory('recategorize', `Recategorizando y agrupando ${notes.length} notas`);
+            if (!confirm(`¿Recategorizar ${notesToRecategorize.length} nota${notesToRecategorize.length !== 1 ? 's' : ''} sin categoría o en "Other" con AI?\n\nEsto reorganizará estas notas por categorías y agrupará items similares con tags comunes.`)) {
+                return;
+            }
 
-            // Procesar todas las notas
-            for (const note of notes) {
+            console.log(`🔄 Recategorizando y agrupando ${notesToRecategorize.length} notas...`);
+            addToHistory('recategorize', `Recategorizando y agrupando ${notesToRecategorize.length} notas sin categoría o en "Other"`);
+
+            // Procesar solo las notas filtradas
+            for (const note of notesToRecategorize) {
                 console.log(`🔄 Recategorizando: "${note.text}"`);
                 updateTerminalLine(note.id, '🔄 Recategorizando y agrupando...', false);
 
@@ -2289,7 +2297,7 @@
 
             console.log('✅ Recategorización y agrupación completa');
             addToHistory('recategorize', `Recategorización y agrupación completada - items similares ahora tienen tags comunes`);
-            alert('✅ Recategorización completa!\n\nLas notas han sido reorganizadas por categorías y las similares han sido agrupadas con tags comunes.');
+            alert('✅ Recategorización completa!\n\nLas notas sin categoría o en "Other" han sido reorganizadas por categorías y las similares han sido agrupadas con tags comunes.');
         }
 
         // Borrar todas las notas
@@ -2391,9 +2399,50 @@
         function toggleAssignmentHideAccepted() {
             const checkbox = document.getElementById('assignmentHideAcceptedCheckbox');
             assignmentHideAccepted = checkbox.checked;
-            // Re-ejecutar el toggle para re-renderizar con el filtro aplicado
-            toggleAssignmentMode();
-            toggleAssignmentMode();
+
+            // Solo re-renderizar si estamos en modo asignación
+            if (assignmentMode) {
+                // Re-renderizar todas las líneas del terminal con el filtro actualizado
+                let notesToRender = notes;
+
+                // Filtrar aceptados si el checkbox está marcado
+                if (assignmentHideAccepted) {
+                    notesToRender = notesToRender.filter(note => note.reviewStatus !== 'accepted');
+                }
+
+                // Ordenar: sin asignar primero
+                notesToRender = [...notesToRender].sort((a, b) => {
+                    const aHasAssignments = (a.assignedTo && a.assignedTo.length > 0) || a.difficulty || a.priority;
+                    const bHasAssignments = (b.assignedTo && b.assignedTo.length > 0) || b.difficulty || b.priority;
+                    if (!aHasAssignments && bHasAssignments) return -1;
+                    if (aHasAssignments && !bHasAssignments) return 1;
+                    return 0;
+                });
+
+                // Re-ordenar elementos en el DOM y ocultar los que no están en la lista filtrada
+                const terminalOutput = document.getElementById('terminalOutput');
+                const notesToRenderIds = new Set(notesToRender.map(n => n.id));
+
+                // Primero ocultar todas las líneas que no están en la lista filtrada
+                notes.forEach(note => {
+                    const lineElement = document.getElementById(`line-${note.id}`);
+                    if (lineElement) {
+                        if (!notesToRenderIds.has(note.id)) {
+                            lineElement.style.display = 'none';
+                        } else {
+                            lineElement.style.display = 'block';
+                        }
+                    }
+                });
+
+                // Luego re-ordenar las visibles
+                notesToRender.forEach(note => {
+                    const lineElement = document.getElementById(`line-${note.id}`);
+                    if (lineElement) {
+                        terminalOutput.appendChild(lineElement);
+                    }
+                });
+            }
         }
 
         // Toggle selección de persona
