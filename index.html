@@ -996,19 +996,297 @@
         }
 
         @media (max-width: 768px) {
+            /* Header adaptado para mobile */
+            .header {
+                flex-direction: column;
+                gap: 10px;
+                padding: 12px;
+                align-items: stretch;
+            }
+
+            .header h1 {
+                font-size: 1.2rem;
+                text-align: center;
+                margin-bottom: 8px;
+            }
+
+            .header > div {
+                flex-direction: column;
+                gap: 8px !important;
+                width: 100%;
+            }
+
+            .header button {
+                width: 100%;
+                padding: 10px !important;
+                font-size: 0.9rem !important;
+            }
+
+            .date {
+                text-align: center;
+                width: 100%;
+            }
+
+            /* Main container en columna */
             .main-container {
                 flex-direction: column;
+                height: auto;
+            }
+
+            .terminal-section {
+                width: 100%;
+                height: 50vh;
+                min-height: 300px;
+                border-right: none;
+            }
+
+            .terminal-input {
+                font-size: 0.9rem;
+                padding: 12px;
+            }
+
+            .terminal-output {
+                font-size: 0.85rem;
+                padding: 15px;
             }
 
             .notes-section {
                 width: 100%;
-                height: 40%;
+                height: auto;
+                min-height: 50vh;
                 border-right: none;
                 border-top: 2px solid #1a1a2e;
             }
 
+            .notes-header {
+                padding: 12px;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .notes-header button {
+                font-size: 0.8rem;
+                padding: 6px 10px;
+            }
+
+            /* Historial mobile */
+            .history-panel {
+                width: 100%;
+                left: 0;
+            }
+
+            /* Review mode mobile */
+            .review-panel {
+                padding: 0;
+            }
+
+            .review-header {
+                flex-direction: column;
+                gap: 10px;
+                padding: 12px;
+            }
+
+            .review-controls {
+                width: 100%;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .review-controls button {
+                width: 100%;
+            }
+
+            .review-filter-container {
+                padding: 12px;
+            }
+
+            .review-filter-input {
+                font-size: 0.9rem;
+            }
+
+            #reviewPersonFilters {
+                gap: 6px !important;
+            }
+
+            #reviewPersonFilters button {
+                font-size: 0.75rem !important;
+                padding: 6px 8px !important;
+            }
+
+            .review-content {
+                padding: 12px;
+            }
+
+            .review-item {
+                padding: 12px;
+                font-size: 0.9rem;
+            }
+
+            .review-item-meta {
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+
+            .review-meta-badge {
+                font-size: 0.7rem;
+                padding: 4px 8px;
+            }
+
+            /* Assignment mode mobile */
+            .assignment-section {
+                padding: 10px;
+            }
+
+            .assignment-people {
+                gap: 6px;
+            }
+
+            .person-checkbox {
+                font-size: 0.75rem;
+                padding: 6px 10px;
+            }
+
+            .assigned-person {
+                font-size: 0.7rem;
+                padding: 4px 8px;
+            }
+
+            /* Note cards mobile */
+            .note-card {
+                padding: 12px;
+                font-size: 0.9rem;
+            }
+
+            .note-card-text {
+                font-size: 0.9rem;
+                line-height: 1.4;
+            }
+
+            .note-category-badge,
+            .note-tag {
+                font-size: 0.7rem;
+                padding: 4px 8px;
+            }
+
+            .note-card-meta {
+                flex-direction: column;
+                gap: 8px;
+                align-items: flex-start;
+            }
+
+            .note-card-meta > div {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .priority-badge,
+            .work-status-badge {
+                font-size: 0.75rem;
+                padding: 4px 10px;
+            }
+
+            .edit-btn,
+            .delete-btn,
+            .save-btn,
+            .cancel-btn {
+                font-size: 0.8rem;
+                padding: 6px 10px;
+            }
+
+            /* Tag groups mobile */
+            .tag-group-header {
+                font-size: 0.85rem;
+                padding: 8px 10px;
+            }
+
+            /* Terminal line mobile */
+            .terminal-line {
+                font-size: 0.85rem;
+            }
+
+            .terminal-category-badge,
+            .terminal-tag {
+                font-size: 0.7rem;
+                padding: 3px 6px;
+            }
+
+            /* Work status selector mobile */
+            .work-status-selector,
+            .priority-selector {
+                width: 100%;
+                left: 0 !important;
+                right: 0 !important;
+            }
+
+            .work-status-option,
+            .priority-option {
+                font-size: 0.8rem;
+                padding: 10px;
+            }
+
+            /* Review person section mobile */
+            .review-person-section {
+                margin-bottom: 20px;
+            }
+
+            .review-person-title {
+                font-size: 1rem;
+                padding: 10px;
+            }
+
+            /* Hide some elements on very small screens */
+            .date {
+                font-size: 0.85rem;
+            }
+        }
+
+        /* Landscape mobile adjustments */
+        @media (max-width: 768px) and (orientation: landscape) {
             .terminal-section {
-                border-right: none;
+                height: 40vh;
+            }
+
+            .notes-section {
+                min-height: 40vh;
+            }
+        }
+
+        /* Very small mobile devices */
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1rem;
+            }
+
+            .terminal-output {
+                font-size: 0.8rem;
+                padding: 10px;
+            }
+
+            .terminal-input {
+                font-size: 0.85rem;
+                padding: 10px;
+            }
+
+            .note-card {
+                padding: 10px;
+            }
+
+            .review-item {
+                padding: 10px;
+            }
+
+            #reviewPersonFilters {
+                font-size: 0.7rem;
+            }
+
+            #reviewPersonFilters button {
+                font-size: 0.7rem !important;
+                padding: 5px 6px !important;
+            }
+
+            .assignment-people label {
+                font-size: 0.7rem;
+                padding: 5px 8px;
             }
         }
     </style>
