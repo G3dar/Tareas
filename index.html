@@ -3239,20 +3239,20 @@
 
             countEl.textContent = `${filteredNotes.length} nota${filteredNotes.length !== 1 ? 's' : ''}`;
 
-            // En modo asignación, ordenar notas sin personas asignadas primero
+            // En modo asignación, separar en dos grupos: sin asignar y con asignados
+            let unassignedNotes = [];
+            let assignedNotes = [];
+
             if (assignmentMode) {
-                filteredNotes = filteredNotes.sort((a, b) => {
-                    const aHasPeople = a.assignedTo && a.assignedTo.length > 0;
-                    const bHasPeople = b.assignedTo && b.assignedTo.length > 0;
-                    if (!aHasPeople && bHasPeople) return -1;
-                    if (aHasPeople && !bHasPeople) return 1;
-                    return 0;
-                });
+                unassignedNotes = filteredNotes.filter(note => !note.assignedTo || note.assignedTo.length === 0);
+                assignedNotes = filteredNotes.filter(note => note.assignedTo && note.assignedTo.length > 0);
             }
 
             // Agrupar por categoría y tags
             const grouped = {};
-            filteredNotes.forEach(note => {
+            const notesToGroup = assignmentMode ? assignedNotes : filteredNotes;
+
+            notesToGroup.forEach(note => {
                 const category = note.category || 'Other';
                 if (!grouped[category]) grouped[category] = {};
 
@@ -3267,8 +3267,61 @@
                 }
             });
 
+            // Agrupar notas sin asignar (en modo asignación)
+            const unassignedGrouped = {};
+            if (assignmentMode && unassignedNotes.length > 0) {
+                unassignedNotes.forEach(note => {
+                    const category = note.category || 'Other';
+                    if (!unassignedGrouped[category]) unassignedGrouped[category] = {};
+
+                    if (note.tags && note.tags.length > 0) {
+                        note.tags.forEach(tag => {
+                            if (!unassignedGrouped[category][tag]) unassignedGrouped[category][tag] = [];
+                            unassignedGrouped[category][tag].push(note);
+                        });
+                    } else {
+                        if (!unassignedGrouped[category]['General']) unassignedGrouped[category]['General'] = [];
+                        unassignedGrouped[category]['General'].push(note);
+                    }
+                });
+            }
+
             // Renderizar
-            container.innerHTML = Object.entries(grouped)
+            let html = '';
+
+            // Primero: notas sin asignar (en modo asignación)
+            if (assignmentMode && Object.keys(unassignedGrouped).length > 0) {
+                html += `<div style="background: rgba(255, 200, 0, 0.05); padding: 15px; border-radius: 8px; margin-bottom: 30px; border: 2px solid rgba(255, 200, 0, 0.3);">
+                    <div style="color: #ffc800; font-weight: bold; font-size: 1.2rem; margin-bottom: 20px;">
+                        ⚠️ SIN ASIGNAR (${unassignedNotes.length})
+                    </div>`;
+                html += Object.entries(unassignedGrouped)
+                    .map(([category, tagGroups]) => {
+                        const totalInCategory = Object.values(tagGroups).flat().length;
+                        return `
+                            <div style="margin-bottom: 20px;">
+                                <div style="color: #00ff88; font-weight: bold; font-size: 1rem; margin-bottom: 10px;">
+                                    ${getCategoryEmoji(category)} ${category}
+                                    <span style="color: #888; font-size: 0.85rem; margin-left: 10px;">(${totalInCategory})</span>
+                                </div>
+                                ${Object.entries(tagGroups).map(([tag, tagNotes]) => `
+                                    <div class="tag-group">
+                                        <div class="tag-group-header">
+                                            <span>${tag}</span>
+                                            <span class="tag-badge">${tagNotes.length}</span>
+                                        </div>
+                                        ${tagNotes.map(note => renderNoteCard(note)).join('')}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `;
+                    })
+                    .join('');
+                html += '</div>';
+            }
+
+            // Segundo: notas asignadas (o todas si no estamos en modo asignación)
+            html += Object.entries(grouped)
                 .map(([category, tagGroups]) => {
                     const totalInCategory = Object.values(tagGroups).flat().length;
                     return `
@@ -3277,32 +3330,21 @@
                                 ${getCategoryEmoji(category)} ${category}
                                 <span style="color: #888; font-size: 0.85rem; margin-left: 10px;">(${totalInCategory})</span>
                             </div>
-                            ${Object.entries(tagGroups).map(([tag, tagNotes]) => {
-                                // En modo asignación, ordenar notas sin personas primero dentro de cada tag
-                                let sortedTagNotes = tagNotes;
-                                if (assignmentMode) {
-                                    sortedTagNotes = [...tagNotes].sort((a, b) => {
-                                        const aHasPeople = a.assignedTo && a.assignedTo.length > 0;
-                                        const bHasPeople = b.assignedTo && b.assignedTo.length > 0;
-                                        if (!aHasPeople && bHasPeople) return -1;
-                                        if (aHasPeople && !bHasPeople) return 1;
-                                        return 0;
-                                    });
-                                }
-                                return `
-                                    <div class="tag-group">
-                                        <div class="tag-group-header">
-                                            <span>${tag}</span>
-                                            <span class="tag-badge">${sortedTagNotes.length}</span>
-                                        </div>
-                                        ${sortedTagNotes.map(note => renderNoteCard(note)).join('')}
+                            ${Object.entries(tagGroups).map(([tag, tagNotes]) => `
+                                <div class="tag-group">
+                                    <div class="tag-group-header">
+                                        <span>${tag}</span>
+                                        <span class="tag-badge">${tagNotes.length}</span>
                                     </div>
-                                `;
-                            }).join('')}
+                                    ${tagNotes.map(note => renderNoteCard(note)).join('')}
+                                </div>
+                            `).join('')}
                         </div>
                     `;
                 })
                 .join('');
+
+            container.innerHTML = html;
         }
 
         // Renderizar notas agrupadas por persona
