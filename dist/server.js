@@ -1,22 +1,13 @@
 require('dotenv').config();
 
 const http = require('http');
-const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const url = require('url');
 const { Pool } = require('pg');
 
 const PORT = process.env.PORT || 3000;
-const API_KEY = process.env.ANTHROPIC_API_KEY;
 const DATABASE_URL = process.env.DATABASE_URL;
-
-if (!API_KEY || API_KEY === 'YOUR_API_KEY_HERE') {
-    console.error('❌ ERROR: ANTHROPIC_API_KEY no está configurada');
-    console.error('Por favor crea un archivo .env con tu API key de Anthropic');
-    console.error('Ejemplo: ANTHROPIC_API_KEY=tu_api_key_aqui');
-    process.exit(1);
-}
 
 if (!DATABASE_URL) {
     console.error('❌ ERROR: DATABASE_URL no está configurada');
@@ -144,82 +135,6 @@ const server = http.createServer(async (req, res) => {
                 console.error('❌ Error guardando notas:', error);
                 res.writeHead(500, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: 'Error saving notes' }));
-            }
-        });
-        return;
-    }
-
-    // Proxy para API de Anthropic
-    if (req.url === '/api/categorize' && req.method === 'POST') {
-        let body = '';
-
-        req.on('data', chunk => {
-            body += chunk.toString();
-        });
-
-        req.on('end', () => {
-            try {
-                const { text } = JSON.parse(body);
-
-                const requestData = JSON.stringify({
-                    model: 'claude-sonnet-4-20250514',
-                    max_tokens: 500,
-                    messages: [{
-                        role: 'user',
-                        content: `Analiza esta nota sobre el juego Eggscape y categorizala. Responde ÚNICAMENTE con un JSON válido, sin texto adicional:
-
-{"category": "Bug|Feature|Performance|UI|Sound|Gameplay|Backend|Tools|Other", "tags": ["TAG1", "TAG2"]}
-
-Tags disponibles para usar: PIECES, ENEMIGOS, UI, WEAPONS, LEVELS, LOBBY, TUTORIAL, COMBAT, VOICECHAT, PERFORMANCE, CAMERA, RACE MODE, GREEDY PIGGY, FUNCTIONALITY, MODO EDIT, PAUSA, LAYERS, PACKS, SHD, COLLECTABLES, COLLIDER, POLLERA, LOOK, MENU WB, ROY, SOUND, HONOR, RANK, GRID, BACKEND, PLAY, FRENZY, MARKET, GRABBABLES, MATCHMAKING, VR MODE, SNAPPING, FRIENDING, AUTOSAVE, VEHICLES, POWERUPS, LOGS, COSMETICS, BUILDER, TOOLS
-
-Nota del usuario: "${text}"
-
-Responde SOLO con el JSON, nada más.`
-                    }]
-                });
-
-                const options = {
-                    hostname: 'api.anthropic.com',
-                    path: '/v1/messages',
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-api-key': API_KEY,
-                        'anthropic-version': '2023-06-01',
-                        'Content-Length': Buffer.byteLength(requestData)
-                    }
-                };
-
-                const apiReq = https.request(options, (apiRes) => {
-                    let responseData = '';
-
-                    apiRes.on('data', chunk => {
-                        responseData += chunk;
-                    });
-
-                    apiRes.on('end', () => {
-                        console.log('✅ API Response:', responseData);
-                        res.writeHead(apiRes.statusCode, {
-                            'Content-Type': 'application/json',
-                            'Access-Control-Allow-Origin': '*'
-                        });
-                        res.end(responseData);
-                    });
-                });
-
-                apiReq.on('error', (error) => {
-                    console.error('❌ API Error:', error);
-                    res.writeHead(500, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ error: error.message }));
-                });
-
-                apiReq.write(requestData);
-                apiReq.end();
-
-            } catch (error) {
-                console.error('❌ Parse Error:', error);
-                res.writeHead(400, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ error: 'Invalid request' }));
             }
         });
         return;

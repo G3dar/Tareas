@@ -1,6 +1,6 @@
 # 🥚 Eggscape Build Notes
 
-Sistema de notas para builds de Eggscape con organización automática mediante AI de Anthropic (Claude 4.5).
+Sistema de notas para builds de Eggscape.
 
 ## 🌐 Despliegue en Render (Web Service)
 
@@ -24,13 +24,11 @@ Sistema de notas para builds de Eggscape con organización automática mediante 
 3. **Configurar Variable de Entorno**:
    - Una vez creado el servicio, ve a la pestaña "Environment"
    - Click en "Add Environment Variable"
-   - **Key**: `ANTHROPIC_API_KEY`
-   - **Value**: Tu API key de Anthropic (sk-ant-api03-...)
+   - **Key**: `DATABASE_URL`
+   - **Value**: Tu URL de conexión a PostgreSQL (ej: Supabase)
    - Click en "Save Changes"
 
 4. **Acceso**: Render te dará una URL como `https://tareas-eggscape.onrender.com`
-
-✅ **Seguridad**: La API key está protegida en el servidor y no se expone al navegador.
 
 ## 🖥️ Uso Local
 
@@ -39,11 +37,11 @@ Sistema de notas para builds de Eggscape con organización automática mediante 
    npm install
    ```
 
-2. **Configurar API Key**:
+2. **Configurar variables de entorno**:
    - Crea un archivo `.env` en la raíz del proyecto
-   - Agrega tu API key:
+   - Agrega la URL de tu base de datos:
      ```
-     ANTHROPIC_API_KEY=tu_api_key_aqui
+     DATABASE_URL=tu_url_de_base_de_datos_aqui
      ```
 
 3. **Iniciar servidor**:
@@ -56,13 +54,12 @@ Sistema de notas para builds de Eggscape con organización automática mediante 
 ## 📋 Características
 
 - ✨ Interface tipo terminal con tema oscuro
-- 🤖 Organización automática de notas con AI de Claude 4.5
 - 📂 Categorías: Bug, Feature, Performance, UI, Sound, Gameplay, Backend, Tools, Other
 - 👥 Sistema de asignación de tareas a personas
 - 📊 Niveles de dificultad: Easy, Medium, Hard
 - ⚡ Prioridades: Low, Medium, High, Critical
-- 🏷️ Tags automáticos por el AI
-- 💾 Persistencia local con localStorage
+- 🏷️ Sistema de tags personalizables
+- 💾 Persistencia con PostgreSQL (Supabase)
 - 📥 Exportar/Importar notas en JSON
 - 👥 Exportar tareas organizadas por persona
 - 📱 Diseño totalmente responsivo
@@ -71,8 +68,8 @@ Sistema de notas para builds de Eggscape con organización automática mediante 
 ## 🛠️ Uso
 
 1. Escribe tu nota en el campo de texto
-2. Presiona Enter
-3. La AI categorizará y agregará tags automáticamente
+2. Presiona Enter para agregar la nota
+3. Asigna categorías, tags, y otros atributos manualmente
 
 ### Modo Asignación
 
@@ -97,5 +94,4 @@ Este proyecto está configurado con GitHub Actions para desplegar automáticamen
 - Usa Enter para agregar notas rápidamente
 - El historial guarda todas las acciones
 - Click en una nota para editarla
-- El botón "🔄 Recategorizar y Agrupar" reorganiza todas las notas
 - En modo revisión, filtra por persona u oculta tareas aceptadas
