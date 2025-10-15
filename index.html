@@ -1575,6 +1575,97 @@
         let reviewFilterPerson = null; // Filtro por persona (null = todas)
         let reviewHideAccepted = true; // Ocultar tareas aceptadas (por defecto activado)
 
+        // ===== STATE PERSISTENCE FUNCTIONS =====
+
+        // Guardar estado actual en localStorage
+        function saveViewState() {
+            const state = {
+                buildReviewMode,
+                buildReviewSelectedDay,
+                buildReviewHideAccepted,
+                mainHideAccepted,
+                assignmentMode,
+                assignmentViewMode,
+                assignmentHideAccepted,
+                assignmentFilterText,
+                assignmentFilterPerson,
+                reviewMode,
+                reviewGroupByPerson,
+                reviewFilterText,
+                reviewFilterPerson,
+                reviewHideAccepted
+            };
+            localStorage.setItem('viewState', JSON.stringify(state));
+        }
+
+        // Restaurar estado desde localStorage
+        function restoreViewState() {
+            const saved = localStorage.getItem('viewState');
+            if (!saved) return;
+
+            try {
+                const state = JSON.parse(saved);
+
+                // Restaurar variables
+                buildReviewMode = state.buildReviewMode || false;
+                buildReviewSelectedDay = state.buildReviewSelectedDay || 'all';
+                buildReviewHideAccepted = state.buildReviewHideAccepted || false;
+                mainHideAccepted = state.mainHideAccepted !== undefined ? state.mainHideAccepted : true;
+                assignmentMode = state.assignmentMode || false;
+                assignmentViewMode = state.assignmentViewMode || 'category';
+                assignmentHideAccepted = state.assignmentHideAccepted !== undefined ? state.assignmentHideAccepted : true;
+                assignmentFilterText = state.assignmentFilterText || '';
+                assignmentFilterPerson = state.assignmentFilterPerson || null;
+                reviewMode = state.reviewMode || false;
+                reviewGroupByPerson = state.reviewGroupByPerson !== undefined ? state.reviewGroupByPerson : true;
+                reviewFilterText = state.reviewFilterText || '';
+                reviewFilterPerson = state.reviewFilterPerson || null;
+                reviewHideAccepted = state.reviewHideAccepted !== undefined ? state.reviewHideAccepted : true;
+
+                // Aplicar UI según el estado restaurado
+                if (buildReviewMode) {
+                    const btn = document.getElementById('buildReviewModeBtn');
+                    const panel = document.getElementById('buildReviewPanel');
+                    const mainContainer = document.querySelector('.main-container');
+                    if (btn && panel && mainContainer) {
+                        btn.classList.add('active');
+                        panel.classList.add('active');
+                        mainContainer.classList.add('review-active');
+
+                        // Restaurar día seleccionado
+                        const dayBtn = document.getElementById(`dayBtn-${buildReviewSelectedDay}`);
+                        if (dayBtn) dayBtn.classList.add('active');
+
+                        // Restaurar checkbox
+                        const hideAcceptedCheckbox = document.getElementById('buildReviewHideAcceptedCheckbox');
+                        if (hideAcceptedCheckbox) hideAcceptedCheckbox.checked = buildReviewHideAccepted;
+
+                        renderBuildReview();
+                    }
+                } else if (reviewMode) {
+                    const btn = document.getElementById('reviewModeBtn');
+                    const panel = document.getElementById('reviewPanel');
+                    const mainContainer = document.querySelector('.main-container');
+                    if (btn && panel && mainContainer) {
+                        btn.classList.add('active');
+                        panel.classList.add('active');
+                        mainContainer.classList.add('review-active');
+                        renderPersonFilters();
+                        renderReviewMode();
+                    }
+                } else if (assignmentMode) {
+                    const btn = document.getElementById('assignmentModeBtn');
+                    const filterBar = document.getElementById('assignmentFilterBar');
+                    if (btn) btn.classList.add('active');
+                    if (filterBar) filterBar.style.display = 'block';
+                    renderAssignmentFilters();
+                    renderTerminal();
+                }
+            } catch (e) {
+                console.error('Error restoring view state:', e);
+            }
+        }
+
         // Lista de personas para asignar
         const people = ['VALEN', 'PABLO', 'MATI', 'LUKAKU', 'LUCASM', 'FEDEM', 'AGUS'];
 
@@ -1643,6 +1734,8 @@
                 panel.classList.remove('active');
                 mainContainer.classList.remove('review-active');
             }
+
+            saveViewState();
         }
 
         // Renderizar filtros de personas
@@ -1699,6 +1792,7 @@
             reviewFilterPerson = person;
             renderPersonFilters();
             renderReviewMode();
+            saveViewState();
         }
 
         // Copiar link personal
@@ -1801,6 +1895,7 @@
             const checkbox = document.getElementById('hideAcceptedCheckbox');
             reviewHideAccepted = checkbox.checked;
             renderReviewMode();
+            saveViewState();
         }
 
         // Toggle agrupamiento (persona vs categoría)
@@ -1809,6 +1904,7 @@
             const btn = document.getElementById('reviewGroupToggle');
             btn.textContent = reviewGroupByPerson ? 'Por Persona' : 'Por Categoría';
             renderReviewMode();
+            saveViewState();
         }
 
         // Filtrar notas en review mode
@@ -1846,6 +1942,8 @@
                 panel.classList.remove('active');
                 mainContainer.classList.remove('review-active');
             }
+
+            saveViewState();
         }
 
         // Filtrar BUILD REVIEW por día
@@ -1866,6 +1964,7 @@
             });
 
             renderBuildReview();
+            saveViewState();
         }
 
         // Toggle ocultar aceptados en BUILD REVIEW
@@ -2448,6 +2547,9 @@
                 }
             }
 
+            // Restaurar estado guardado (si existe)
+            restoreViewState();
+
             // Vista de notas organizadas es el modo default
             renderNotes();
             renderHistory();
@@ -2888,6 +2990,7 @@
             });
 
             renderNotes();
+            saveViewState();
         }
 
         // Toggle ocultar aceptados en modo asignación
